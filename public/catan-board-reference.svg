@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="820" viewBox="0 0 980 820">
+  <defs>
+    <style>
+      .label { font: 700 20px "Arial", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #1f2937; text-anchor: middle; dominant-baseline: middle; }
+      .small { font: 600 14px "Arial", sans-serif; fill: #374151; text-anchor: middle; dominant-baseline: middle; }
+      .num { font: 700 24px "Arial", sans-serif; text-anchor: middle; dominant-baseline: middle; }
+      .num-red { fill: #b91c1c; }
+      .num-black { fill: #111827; }
+    </style>
+
+    <polygon id="hex" points="0,-70 60.62,-35 60.62,35 0,70 -60.62,35 -60.62,-35" stroke="#374151" stroke-width="3"></polygon>
+
+    <g id="token">
+      <circle r="26" fill="#f8f1d4" stroke="#7c5a2c" stroke-width="2.5"></circle>
+    </g>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#eef6ff"></rect>
+
+  <!-- 行 1 -->
+  <g transform="translate(368,120)">
+    <use href="#hex" fill="#6aa84f"></use>
+    <text x="0" y="-10" class="label">木材</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">11</text>
+  </g>
+
+  <g transform="translate(490,120)">
+    <use href="#hex" fill="#e69138"></use>
+    <text x="0" y="-10" class="label">砖块</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">4</text>
+  </g>
+
+  <g transform="translate(612,120)">
+    <use href="#hex" fill="#93c47d"></use>
+    <text x="0" y="-10" class="label">羊毛</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-red">8</text>
+  </g>
+
+  <!-- 行 2 -->
+  <g transform="translate(307,225)">
+    <use href="#hex" fill="#999999"></use>
+    <text x="0" y="-10" class="label">矿石</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">10</text>
+  </g>
+
+  <g transform="translate(429,225)">
+    <use href="#hex" fill="#f1c232"></use>
+    <text x="0" y="-10" class="label">小麦</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">9</text>
+  </g>
+
+  <g transform="translate(551,225)">
+    <use href="#hex" fill="#6aa84f"></use>
+    <text x="0" y="-10" class="label">木材</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">12</text>
+  </g>
+
+  <g transform="translate(673,225)">
+    <use href="#hex" fill="#93c47d"></use>
+    <text x="0" y="-10" class="label">羊毛</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">6</text>
+  </g>
+
+  <!-- 行 3 -->
+  <g transform="translate(246,330)">
+    <use href="#hex" fill="#f1c232"></use>
+    <text x="0" y="-10" class="label">小麦</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">2</text>
+  </g>
+
+  <g transform="translate(368,330)">
+    <use href="#hex" fill="#6aa84f"></use>
+    <text x="0" y="-10" class="label">木材</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-red">8</text>
+  </g>
+
+  <g transform="translate(490,330)">
+    <use href="#hex" fill="#e6d5a8"></use>
+    <text x="0" y="-10" class="label">沙漠</text>
+    <text x="0" y="26" class="small">盗贼</text>
+    <circle cx="0" cy="48" r="10" fill="#333"></circle>
+  </g>
+
+  <g transform="translate(612,330)">
+    <use href="#hex" fill="#93c47d"></use>
+    <text x="0" y="-10" class="label">羊毛</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">3</text>
+  </g>
+
+  <g transform="translate(734,330)">
+    <use href="#hex" fill="#999999"></use>
+    <text x="0" y="-10" class="label">矿石</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-red">6</text>
+  </g>
+
+  <!-- 行 4 -->
+  <g transform="translate(307,435)">
+    <use href="#hex" fill="#e69138"></use>
+    <text x="0" y="-10" class="label">砖块</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">5</text>
+  </g>
+
+  <g transform="translate(429,435)">
+    <use href="#hex" fill="#f1c232"></use>
+    <text x="0" y="-10" class="label">小麦</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-red">8</text>
+  </g>
+
+  <g transform="translate(551,435)">
+    <use href="#hex" fill="#999999"></use>
+    <text x="0" y="-10" class="label">矿石</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">10</text>
+  </g>
+
+  <g transform="translate(673,435)">
+    <use href="#hex" fill="#93c47d"></use>
+    <text x="0" y="-10" class="label">羊毛</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">9</text>
+  </g>
+
+  <!-- 行 5 -->
+  <g transform="translate(368,540)">
+    <use href="#hex" fill="#6aa84f"></use>
+    <text x="0" y="-10" class="label">木材</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">5</text>
+  </g>
+
+  <g transform="translate(490,540)">
+    <use href="#hex" fill="#f1c232"></use>
+    <text x="0" y="-10" class="label">小麦</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">11</text>
+  </g>
+
+  <g transform="translate(612,540)">
+    <use href="#hex" fill="#e69138"></use>
+    <text x="0" y="-10" class="label">砖块</text>
+    <use href="#token" x="0" y="22"></use>
+    <text x="0" y="25" class="num num-black">4</text>
+  </g>
+
+</svg>
