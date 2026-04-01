@@ -171,7 +171,7 @@ h2 {
 .phaser-host {
   position: relative;
   aspect-ratio: 16 / 9;
-  min-height: 340px;
+  min-height: 420px;
   overflow: hidden;
   border-radius: 18px;
   background: rgba(8, 20, 28, 0.55);
@@ -231,16 +231,21 @@ h2 {
 
 .catan-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 356px;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) 332px;
+  gap: 14px;
   align-items: stretch;
   width: 100%;
-  max-width: 1500px;
+  max-width: 1680px;
   margin: 0 auto;
 }
 
 .catan-workspace--map {
   grid-template-columns: minmax(0, 1fr);
+  max-width: 1700px;
+}
+
+.catan-workspace--map .phaser-host {
+  min-height: 500px;
 }
 
 .app-shell--catan .app-shell__hud {
@@ -296,7 +301,7 @@ h2 {
 }
 
 .app-shell--catan .catan-workspace__board .scene-panel {
-  width: min(100%, 1040px);
+  width: min(100%, 1280px);
 }
 
 .app-shell--catan .catan-workspace__board .scene-panel__body,
@@ -305,7 +310,7 @@ h2 {
 }
 
 .app-shell--catan .catan-workspace__board .scene-panel__body {
-  padding: 4px;
+  padding: 2px;
   place-items: center;
 }
 
@@ -324,7 +329,7 @@ h2 {
 
 .app-shell--catan .phaser-host {
   height: 100%;
-  min-height: 0;
+  min-height: clamp(520px, 72vh, 880px);
   aspect-ratio: auto;
   border-radius: 16px;
 }
@@ -429,24 +434,24 @@ h2 {
   bottom: 0;
   z-index: 5;
   display: flex;
-  justify-content: center;
-  padding: 0 16px 14px;
+  justify-content: flex-start;
+  padding: 0 12px 10px;
   pointer-events: none;
 }
 
 .festival-map-overlay__panel {
   pointer-events: auto;
   display: grid;
-  grid-template-columns: minmax(120px, auto) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(106px, auto) minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  width: min(680px, 100%);
-  border-radius: 14px;
+  gap: 10px;
+  width: min(560px, calc(100% - 24px));
+  border-radius: 12px;
   border: 1px solid rgba(234, 215, 170, 0.2);
-  background: rgba(9, 13, 21, 0.76);
-  box-shadow: 0 10px 26px rgba(1, 4, 8, 0.34);
-  backdrop-filter: blur(2px);
-  padding: 10px 12px;
+  background: rgba(9, 13, 21, 0.64);
+  box-shadow: 0 8px 18px rgba(1, 4, 8, 0.28);
+  backdrop-filter: blur(1px);
+  padding: 8px 10px;
 }
 
 .festival-map-overlay__meta {
@@ -472,7 +477,7 @@ h2 {
 .festival-map-overlay__line {
   margin: 0;
   color: #f8f2dc;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   line-height: 1.35;
 }
 
@@ -483,8 +488,8 @@ h2 {
 }
 
 .festival-map-overlay__actions .text-button {
-  padding: 8px 12px;
-  font-size: 0.86rem;
+  padding: 7px 10px;
+  font-size: 0.8rem;
 }
 
 .gift-note-overlay {
@@ -1658,7 +1663,12 @@ h2 {
   }
 
   .app-shell--catan .phaser-host {
+    min-height: 420px;
     aspect-ratio: 16 / 9;
+  }
+
+  .catan-workspace--map .phaser-host {
+    min-height: 420px;
   }
 }
 
@@ -1763,13 +1773,15 @@ h2 {
   }
 
   .festival-map-overlay {
-    padding: 0 10px 10px;
+    justify-content: center;
+    padding: 0 8px 8px;
   }
 
   .festival-map-overlay__panel {
     grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 10px;
+    gap: 6px;
+    width: min(420px, 96%);
+    padding: 8px;
   }
 
   .festival-map-overlay__actions {

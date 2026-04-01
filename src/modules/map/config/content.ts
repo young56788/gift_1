@@ -96,6 +96,11 @@ export const mapSceneContent = {
         crowdCue: "center",
       },
       {
+        speaker: "圆葱",
+        line: "今天是你的生日，敢不开心打歪你，记得去找找你的礼物。",
+        crowdCue: "right",
+      },
+      {
         speaker: "大家",
         line: "生日快乐！",
         crowdCue: "all",
