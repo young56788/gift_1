@@ -5,6 +5,9 @@ import type { GameState, SceneId } from "./types";
 type GameStore = GameState & {
   setCurrentScene: (scene: SceneId) => void;
   setOverlayMessage: (message: string | null) => void;
+  setFestivalSequenceActive: (active: boolean) => void;
+  setMapTimeOfDay: (timeOfDay: "day" | "night") => void;
+  setMapCandleLightsOn: (on: boolean) => void;
   markShrimpCompleted: (payload: {
     normalCatchCount: number;
     specialItemFound: boolean;
@@ -15,7 +18,7 @@ type GameStore = GameState & {
 
 const initialState: GameState = {
   player: {
-    name: "寿星",
+    name: "橙橙",
   },
   inventory: {
     specialItemFound: false,
@@ -28,9 +31,12 @@ const initialState: GameState = {
     festivalSeen: false,
   },
   ui: {
-    currentScene: "intro",
+    currentScene: "map",
     overlayMessage: null,
     lowPowerMode: false,
+    festivalSequenceActive: false,
+    mapTimeOfDay: "day",
+    mapCandleLightsOn: false,
   },
 };
 
@@ -48,6 +54,27 @@ export const useGameStore = create<GameStore>((set) => ({
       ui: {
         ...state.ui,
         overlayMessage: message,
+      },
+    })),
+  setFestivalSequenceActive: (active) =>
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        festivalSequenceActive: active,
+      },
+    })),
+  setMapTimeOfDay: (timeOfDay) =>
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        mapTimeOfDay: timeOfDay,
+      },
+    })),
+  setMapCandleLightsOn: (on) =>
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        mapCandleLightsOn: on,
       },
     })),
   markShrimpCompleted: ({ specialItemFound }) =>

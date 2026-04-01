@@ -137,6 +137,11 @@ h2 {
   background: rgba(255, 249, 224, 0.08);
 }
 
+.map-preview-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .status-card .label {
   display: block;
   margin-bottom: 4px;
@@ -166,9 +171,14 @@ h2 {
 .phaser-host {
   position: relative;
   aspect-ratio: 16 / 9;
+  min-height: 340px;
   overflow: hidden;
   border-radius: 18px;
   background: rgba(8, 20, 28, 0.55);
+}
+
+.map-stage {
+  position: relative;
 }
 
 .phaser-host canvas {
@@ -207,6 +217,18 @@ h2 {
   min-height: 0;
 }
 
+.phaser-debug-panel {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(155, 196, 255, 0.4);
+  background: rgba(7, 16, 24, 0.82);
+  color: #d9ecff;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
 .catan-workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 356px;
@@ -215,6 +237,10 @@ h2 {
   width: 100%;
   max-width: 1500px;
   margin: 0 auto;
+}
+
+.catan-workspace--map {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .app-shell--catan .app-shell__hud {
@@ -303,6 +329,39 @@ h2 {
   border-radius: 16px;
 }
 
+.catan-stage {
+  position: relative;
+  display: grid;
+  height: 100%;
+  min-height: 0;
+}
+
+.catan-runtime-alert {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 20;
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 216, 173, 0.5);
+  background: rgba(17, 24, 30, 0.9);
+  color: #ffe8cb;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32);
+}
+
+.catan-runtime-alert p {
+  margin: 0;
+  white-space: pre-line;
+  line-height: 1.35;
+}
+
+.catan-runtime-alert .text-button {
+  justify-self: start;
+}
+
 .plain-list {
   display: grid;
   gap: 12px;
@@ -323,6 +382,12 @@ h2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.intro-actions {
+  display: grid;
+  gap: 10px;
+  max-width: 320px;
 }
 
 .text-button {
@@ -351,8 +416,119 @@ h2 {
 .overlay-note {
   padding: 14px 16px;
   border-radius: 16px;
-  color: #173431;
-  background: linear-gradient(180deg, #ffeab3 0%, #ffd67a 100%);
+  color: #f3e6c5;
+  border: 1px solid rgba(230, 212, 164, 0.24);
+  background: rgba(10, 16, 22, 0.78);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.festival-map-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 14px;
+  pointer-events: none;
+}
+
+.festival-map-overlay__panel {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: min(680px, 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(234, 215, 170, 0.2);
+  background: rgba(9, 13, 21, 0.76);
+  box-shadow: 0 10px 26px rgba(1, 4, 8, 0.34);
+  backdrop-filter: blur(2px);
+  padding: 10px 12px;
+}
+
+.festival-map-overlay__meta {
+  display: grid;
+  gap: 2px;
+}
+
+.festival-map-overlay__title {
+  margin: 0;
+  color: #ffe6a5;
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.festival-map-overlay__speaker {
+  margin: 0;
+  color: #ffd487;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+}
+
+.festival-map-overlay__line {
+  margin: 0;
+  color: #f8f2dc;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.festival-map-overlay__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.festival-map-overlay__actions .text-button {
+  padding: 8px 12px;
+  font-size: 0.86rem;
+}
+
+.gift-note-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  pointer-events: none;
+  background: rgba(8, 12, 20, 0.2);
+}
+
+.gift-note-paper {
+  pointer-events: auto;
+  width: min(360px, 92%);
+  display: grid;
+  gap: 10px;
+  padding: 16px 16px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(137, 103, 58, 0.36);
+  background:
+    linear-gradient(180deg, rgba(245, 229, 198, 0.96) 0%, rgba(233, 213, 175, 0.97) 100%);
+  box-shadow:
+    0 18px 34px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(255, 248, 231, 0.58);
+  color: #2d1f12;
+}
+
+.gift-note-paper__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #51381f;
+}
+
+.gift-note-paper__line {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.35;
+}
+
+.gift-note-paper__actions {
+  margin-top: 6px;
 }
 
 .catan-mood {
@@ -535,16 +711,14 @@ h2 {
 
 .stat-card,
 .resource-panel,
-.action-card,
-.festival-dialogue {
+.action-card {
   border: 1px solid rgba(255, 240, 190, 0.12);
   border-radius: 20px;
   background: rgba(18, 38, 46, 0.78);
 }
 
 .stat-card,
-.resource-panel,
-.festival-dialogue {
+.resource-panel {
   display: grid;
   gap: 8px;
   padding: 12px;
@@ -591,8 +765,7 @@ h2 {
 
 .panel-heading,
 .action-card,
-.action-card__title,
-.festival-stage__crowd {
+.action-card__title {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -825,57 +998,610 @@ h2 {
 .festival-stage {
   position: relative;
   overflow: hidden;
-  min-height: 170px;
+  isolation: isolate;
+  min-height: 420px;
   border-radius: 22px;
-  padding: 24px;
+  border: 1px solid rgba(255, 234, 186, 0.2);
+  padding: 0;
+  background: linear-gradient(180deg, #0c1730 0%, #133049 46%, #1c443f 100%);
+}
+
+.festival-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 10;
   background:
-    radial-gradient(circle at top, rgba(255, 228, 163, 0.42), transparent 30%),
-    linear-gradient(180deg, rgba(15, 25, 47, 0.96) 0%, rgba(19, 55, 64, 0.92) 100%);
+    radial-gradient(circle at 50% 82%, rgba(255, 224, 142, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 58%, rgba(3, 6, 12, 0.32) 100%);
+  pointer-events: none;
+}
+
+.festival-stage__backdrop,
+.festival-stage__stars,
+.festival-stage__moon,
+.festival-stage__night-wash,
+.festival-stage__square,
+.festival-stage__garland,
+.festival-stage__table,
+.festival-stage__cast,
+.festival-stage__scenery {
+  position: absolute;
+}
+
+.festival-stage__backdrop {
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(3, 8, 18, 0.26) 0%, rgba(3, 10, 19, 0) 42%),
+    url("/festival/background/sky.png"),
+    url("/festival/background/ground.png"),
+    radial-gradient(circle at 18% 18%, rgba(255, 224, 157, 0.08), transparent 18%),
+    radial-gradient(circle at 78% 15%, rgba(116, 159, 255, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(9, 23, 43, 0.06) 0%, rgba(16, 42, 62, 0.2) 100%);
+  background-repeat: no-repeat;
+  background-position:
+    center top,
+    center 34px,
+    center calc(100% - 16px),
+    center top,
+    center top,
+    center top;
+  background-size:
+    cover,
+    118% auto,
+    118% auto,
+    cover,
+    cover,
+    cover;
+}
+
+.festival-stage__stars {
+  inset: 0;
+  background:
+    radial-gradient(circle at 8% 14%, rgba(255, 247, 214, 0.96), transparent 0.18rem),
+    radial-gradient(circle at 18% 22%, rgba(255, 247, 214, 0.82), transparent 0.14rem),
+    radial-gradient(circle at 31% 10%, rgba(255, 247, 214, 0.9), transparent 0.16rem),
+    radial-gradient(circle at 52% 16%, rgba(255, 247, 214, 0.86), transparent 0.15rem),
+    radial-gradient(circle at 69% 11%, rgba(255, 247, 214, 0.92), transparent 0.16rem),
+    radial-gradient(circle at 83% 18%, rgba(255, 247, 214, 0.82), transparent 0.15rem),
+    radial-gradient(circle at 92% 10%, rgba(255, 247, 214, 0.94), transparent 0.16rem);
+  opacity: 0.7;
+}
+
+.festival-stage__moon {
+  top: 30px;
+  right: 58px;
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 38% 34%, rgba(255, 250, 224, 0.95), rgba(255, 234, 173, 0.9) 62%, rgba(255, 214, 122, 0.08) 100%);
+  box-shadow:
+    0 0 0 14px rgba(255, 227, 154, 0.06),
+    0 0 34px rgba(255, 227, 154, 0.16);
+}
+
+.festival-stage__night-wash {
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(4, 12, 24, 0.32) 0%, rgba(7, 18, 32, 0.12) 28%, rgba(11, 22, 33, 0.1) 100%),
+    radial-gradient(circle at 50% 18%, rgba(255, 228, 160, 0.08), transparent 20%);
 }
 
 .festival-stage__lights {
   position: absolute;
-  inset: 0;
+  left: 9%;
+  right: 9%;
+  top: 20px;
+  height: 70px;
   background:
-    radial-gradient(circle at 15% 18%, rgba(255, 235, 178, 0.8), transparent 0.7rem),
-    radial-gradient(circle at 32% 28%, rgba(255, 235, 178, 0.75), transparent 0.65rem),
-    radial-gradient(circle at 48% 20%, rgba(255, 235, 178, 0.85), transparent 0.8rem),
-    radial-gradient(circle at 63% 30%, rgba(255, 235, 178, 0.72), transparent 0.7rem),
-    radial-gradient(circle at 80% 18%, rgba(255, 235, 178, 0.8), transparent 0.7rem);
-  opacity: 0.95;
+    radial-gradient(circle at 6% 30%, rgba(255, 237, 179, 0.96), transparent 0.82rem),
+    radial-gradient(circle at 17% 58%, rgba(255, 237, 179, 0.82), transparent 0.74rem),
+    radial-gradient(circle at 29% 34%, rgba(255, 237, 179, 0.94), transparent 0.8rem),
+    radial-gradient(circle at 42% 60%, rgba(255, 237, 179, 0.84), transparent 0.72rem),
+    radial-gradient(circle at 56% 32%, rgba(255, 237, 179, 0.9), transparent 0.8rem),
+    radial-gradient(circle at 69% 58%, rgba(255, 237, 179, 0.84), transparent 0.72rem),
+    radial-gradient(circle at 82% 34%, rgba(255, 237, 179, 0.92), transparent 0.78rem),
+    radial-gradient(circle at 94% 56%, rgba(255, 237, 179, 0.84), transparent 0.7rem);
+  opacity: 0.94;
+  animation: festival-twinkle 3.8s ease-in-out infinite;
 }
 
-.festival-stage__crowd {
-  position: relative;
-  margin-top: 82px;
+.festival-stage__garland {
+  left: 10%;
+  right: 10%;
+  top: 12px;
+  height: 56px;
+  background-image: url("/festival/props/lights.png");
+  background-repeat: repeat-x;
+  background-position: center top;
+  background-size: auto 100%;
+  opacity: 0.8;
+  transform-origin: top center;
+  filter: drop-shadow(0 6px 12px rgba(255, 220, 144, 0.25));
+  animation: festival-sway 5.4s ease-in-out infinite;
 }
 
-.festival-stage__crowd span {
-  padding: 12px 14px;
+.festival-stage__spotlight {
+  position: absolute;
+  inset: auto 0 0;
+  height: 100%;
+  background:
+    radial-gradient(circle at 54% 78%, rgba(255, 233, 167, 0.18), transparent 10rem),
+    radial-gradient(circle at 70% 76%, rgba(255, 208, 140, 0.12), transparent 8rem);
+  pointer-events: none;
+}
+
+.festival-stage__square {
+  inset: auto 0 0;
+  height: 66%;
+  z-index: 0;
+}
+
+.festival-stage__plaza,
+.festival-stage__path {
+  position: absolute;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.festival-stage__plaza {
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 28px;
+  border: 2px solid rgba(255, 241, 207, 0.12);
+  background:
+    linear-gradient(180deg, rgba(162, 111, 61, 0.9) 0%, rgba(131, 84, 43, 0.94) 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 234, 196, 0.06),
+    0 20px 44px rgba(0, 0, 0, 0.16);
+}
+
+.festival-stage__plaza::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 22px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 4px, transparent 4px 18px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0 4px, transparent 4px 18px);
+  opacity: 0.26;
+}
+
+.festival-stage__plaza--rear {
+  bottom: 108px;
+  width: min(76%, 680px);
+  height: 126px;
+}
+
+.festival-stage__plaza--front {
+  bottom: 22px;
+  width: min(92%, 860px);
+  height: 126px;
+}
+
+.festival-stage__path {
+  bottom: 80px;
+  width: 92px;
+  height: 188px;
   border-radius: 999px;
-  background: rgba(255, 245, 214, 0.1);
-  border: 1px solid rgba(255, 245, 214, 0.14);
+  background:
+    linear-gradient(180deg, rgba(193, 144, 86, 0.92) 0%, rgba(151, 98, 56, 0.96) 100%);
+  box-shadow: inset 0 0 0 2px rgba(255, 233, 190, 0.08);
+}
+
+.festival-stage__path--left {
+  left: 10%;
+  transform: rotate(-18deg);
+}
+
+.festival-stage__path--right {
+  right: 10%;
+  transform: rotate(18deg);
+}
+
+.festival-stage__scenery {
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.94;
+  transform: translateY(10px);
+  transition:
+    opacity 260ms ease,
+    transform 260ms ease,
+    filter 260ms ease;
+}
+
+.festival-stage.is-entered .festival-stage__scenery {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.festival-stage__house,
+.festival-stage__well,
+.festival-stage__flowers,
+.festival-stage__tree,
+.festival-stage__rock {
+  position: absolute;
+  display: block;
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+}
+
+.festival-stage__house {
+  bottom: 150px;
+  width: 124px;
+  height: 124px;
+  opacity: 0.96;
+}
+
+.festival-stage__house--left {
+  left: 44px;
+  background-image: url("/festival/buildings/pixelwood/house-1.png");
+}
+
+.festival-stage__house--right {
+  right: 46px;
+  background-image: url("/festival/buildings/pixelwood/house-6.png");
+}
+
+.festival-stage__well {
+  left: 50%;
+  bottom: 168px;
+  width: 68px;
+  height: 72px;
+  transform: translateX(-50%);
+  opacity: 0.94;
+  background-image: url("/festival/props/pixelwood/well-1.png");
+}
+
+.festival-stage__tree {
+  bottom: 110px;
+  width: 84px;
+  height: 84px;
+  opacity: 0.94;
+}
+
+.festival-stage__tree--left {
+  left: 6px;
+  background-image: url("/festival/environment/pixelwood/tree-1.png");
+}
+
+.festival-stage__tree--right {
+  right: 8px;
+  background-image: url("/festival/environment/pixelwood/tree-1.png");
+}
+
+.festival-stage__rock {
+  bottom: 86px;
+  width: 28px;
+  height: 18px;
+  opacity: 0.86;
+  background-image: url("/festival/environment/pixelwood/rock-1.png");
+}
+
+.festival-stage__rock--left {
+  left: 108px;
+}
+
+.festival-stage__rock--right {
+  right: 122px;
+}
+
+.festival-stage__flowers {
+  bottom: 122px;
+  width: 26px;
+  height: 34px;
+  opacity: 0.94;
+  background-image: url("/festival/props/flowers.png");
+}
+
+.festival-stage__flowers--left {
+  left: 138px;
+}
+
+.festival-stage__flowers--right {
+  right: 146px;
+  transform: scaleX(-1);
+}
+
+.festival-stage__cast {
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.festival-villager {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -44%) scale(0.92);
+  opacity: 0;
+  transition:
+    opacity 320ms ease,
+    transform 320ms ease,
+    filter 200ms ease;
+}
+
+.festival-stage.is-entered .festival-villager {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.festival-villager__card {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-width: 54px;
+  padding: 8px 8px 6px;
+  border-radius: 12px;
+  background: rgba(18, 28, 35, 0.72);
+  border: 1px solid rgba(255, 245, 214, 0.12);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
+}
+
+.festival-villager__sprite {
+  display: block;
+  width: 26px;
+  height: 26px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  image-rendering: pixelated;
+}
+
+.festival-villager__label {
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.festival-villager.is-player .festival-villager__card {
+  border-color: rgba(255, 229, 160, 0.42);
+  background: rgba(20, 30, 38, 0.84);
+}
+
+.festival-villager.is-player .festival-villager__sprite {
+  transform: scale(1.12);
+}
+
+.festival-villager.is-focused {
+  z-index: 5;
+  filter: none;
+}
+
+.festival-villager.is-active .festival-villager__card {
+  color: #173431;
+  background: linear-gradient(180deg, #ffe79a 0%, #f5c661 100%);
+  border-color: rgba(255, 245, 214, 0.34);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+}
+
+.festival-stage__table {
+  right: 74px;
+  bottom: 122px;
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  z-index: 3;
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 320ms ease,
+    transform 320ms ease,
+    filter 220ms ease;
+}
+
+.festival-stage.is-entered .festival-stage__table {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.festival-stage__table-prop {
+  position: absolute;
+  inset: auto -10px -8px;
+  width: 96px;
+  height: 88px;
+  background-image: url("/festival/props/table.png");
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: contain;
+  image-rendering: pixelated;
+  opacity: 0.86;
+  z-index: -1;
+}
+
+.festival-stage__table-base {
+  position: absolute;
+  inset: auto -16px -10px;
+  height: 52px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(115, 71, 35, 0.92) 0%, rgba(78, 47, 24, 0.96) 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 221, 180, 0.06),
+    0 10px 22px rgba(0, 0, 0, 0.16);
+  z-index: -1;
+}
+
+.festival-prop {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-width: 80px;
+  padding: 10px 10px 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 240, 190, 0.12);
+  background: rgba(20, 24, 28, 0.48);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.14);
+  color: #f8f2dc;
+  font-size: 0.86rem;
+}
+
+.festival-prop__sprite {
+  display: block;
+  width: 40px;
+  height: 40px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  image-rendering: pixelated;
+}
+
+.festival-prop__label {
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.festival-prop--gift .festival-prop__sprite {
+  width: 36px;
+  height: 36px;
+  background-image: url("/festival/props/gift.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.festival-prop--cake .festival-prop__sprite {
+  width: 44px;
+  height: 44px;
+  background-image: url("/festival/props/cake.png");
+  background-size: 300% 100%;
+  background-position: 50% 0;
+  background-repeat: no-repeat;
+}
+
+.festival-stage--entrance .festival-stage__spotlight {
+  background:
+    radial-gradient(circle at 50% 80%, rgba(255, 233, 167, 0.3), transparent 9rem),
+    radial-gradient(circle at 50% 78%, rgba(255, 208, 140, 0.22), transparent 6rem);
+}
+
+.festival-stage--closing .festival-stage__lights {
+  opacity: 1;
+  filter: saturate(1.14);
+}
+
+.festival-stage--closing .festival-stage__garland {
+  opacity: 1;
+  filter: saturate(1.22) drop-shadow(0 8px 14px rgba(255, 216, 126, 0.34));
+}
+
+.festival-stage--motion-lift.is-entered .festival-stage__table {
+  transform: translateY(-4px);
+}
+
+.festival-stage--motion-spotlight.is-entered .festival-villager--player {
+  transform: translate(-50%, -54%) scale(1.06);
+}
+
+.festival-stage--focus-crowd .festival-stage__table {
+  opacity: 0.76;
+}
+
+.festival-stage--focus-gift .festival-prop--gift,
+.festival-stage--focus-cake .festival-prop--cake {
+  border-color: rgba(255, 231, 165, 0.7);
+  box-shadow:
+    0 0 0 1px rgba(255, 231, 165, 0.2),
+    0 0 26px rgba(255, 231, 165, 0.2);
+  transform: translateY(-3px);
+}
+
+.festival-stage--focus-gift .festival-villager,
+.festival-stage--focus-cake .festival-villager {
+  filter: saturate(0.72);
+  opacity: 0.7;
+}
+
+.festival-stage--focus-player .festival-villager:not(.festival-villager--player) {
+  filter: saturate(0.68);
+  opacity: 0.58;
+}
+
+.festival-stage--focus-player .festival-villager--player {
+  z-index: 6;
 }
 
 .festival-dialogue {
-  min-height: 116px;
-}
-
-.festival-steps {
-  display: flex;
+  position: relative;
+  overflow: hidden;
+  min-height: 156px;
+  border: 1px solid rgba(255, 240, 190, 0.2);
+  border-radius: 20px;
+  padding: 18px 20px;
+  display: grid;
   gap: 8px;
+  background:
+    linear-gradient(180deg, rgba(12, 26, 34, 0.9) 0%, rgba(10, 20, 30, 0.9) 100%),
+    url("/festival/ui/dialog-frame.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
 }
 
-.festival-steps__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255, 242, 204, 0.18);
+.festival-dialogue__speaker-tag {
+  display: inline-grid;
+  justify-self: start;
+  align-items: center;
+  min-height: 28px;
+  min-width: 92px;
+  max-width: 240px;
+  padding: 4px 12px;
+  color: #ffe6a8;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background-image: url("/festival/ui/nameplate.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
 }
 
-.festival-steps__dot.is-active {
-  background: #ffe39a;
-  box-shadow: 0 0 14px rgba(255, 227, 154, 0.6);
+.festival-dialogue__speaker-text {
+  display: block;
+  line-height: 1;
+}
+
+.festival-dialogue__beat,
+.festival-dialogue__focus {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.festival-dialogue__beat {
+  color: #ffe0a8;
+}
+
+.festival-dialogue__focus {
+  color: #9fd8ff;
+}
+
+.festival-dialogue__hint {
+  margin: 0;
+  color: #d3decb;
+  font-size: 0.82rem;
+}
+
+@keyframes festival-sway {
+  0%,
+  100% {
+    transform: rotate(-1deg) translateY(0);
+  }
+  50% {
+    transform: rotate(1deg) translateY(1px);
+  }
+}
+
+@keyframes festival-twinkle {
+  0%,
+  100% {
+    opacity: 0.86;
+    filter: saturate(0.94);
+  }
+  50% {
+    opacity: 1;
+    filter: saturate(1.12);
+  }
 }
 
 @media (max-width: 1100px) {
@@ -902,7 +1628,151 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .festival-stage {
+    min-height: 420px;
+  }
+
+  .festival-stage__house--left {
+    left: 10px;
+  }
+
+  .festival-stage__house--right {
+    right: 10px;
+  }
+
+  .festival-stage__table {
+    right: 22px;
+  }
+
+  .festival-villager__card {
+    min-width: 50px;
+    padding: 7px 7px 6px;
+  }
+
+  .festival-stage__flowers--left {
+    left: 92px;
+  }
+
+  .festival-stage__flowers--right {
+    right: 96px;
+  }
+
   .app-shell--catan .phaser-host {
     aspect-ratio: 16 / 9;
+  }
+}
+
+@media (max-width: 700px) {
+  .festival-stage {
+    min-height: 460px;
+  }
+
+  .festival-stage__moon {
+    top: 52px;
+    right: 18px;
+    width: 52px;
+    height: 52px;
+  }
+
+  .festival-stage__plaza--rear {
+    width: 92%;
+    bottom: 138px;
+  }
+
+  .festival-stage__plaza--front {
+    height: 126px;
+  }
+
+  .festival-stage__path {
+    display: none;
+  }
+
+  .festival-stage__house {
+    width: 96px;
+    height: 96px;
+    bottom: 198px;
+  }
+
+  .festival-stage__well {
+    bottom: 202px;
+  }
+
+  .festival-stage__tree {
+    width: 64px;
+    height: 64px;
+    bottom: 164px;
+  }
+
+  .festival-stage__flowers {
+    bottom: 156px;
+  }
+
+  .festival-stage__flowers--left {
+    left: 62px;
+  }
+
+  .festival-stage__flowers--right {
+    right: 64px;
+  }
+
+  .festival-stage__rock {
+    bottom: 146px;
+  }
+
+  .festival-stage__table {
+    opacity: 1;
+    left: 50%;
+    right: auto;
+    bottom: 132px;
+    transform: translateX(-50%);
+  }
+
+  .festival-stage.is-entered .festival-stage__table,
+  .festival-stage--motion-lift.is-entered .festival-stage__table {
+    transform: translateX(-50%);
+  }
+
+  .festival-villager__card {
+    min-width: 46px;
+    padding: 6px 6px 5px;
+  }
+
+  .festival-villager--emily {
+    left: 22% !important;
+    top: 70% !important;
+  }
+
+  .festival-villager--abigail {
+    left: 37% !important;
+    top: 66% !important;
+  }
+
+  .festival-villager--leah {
+    left: 63% !important;
+    top: 66% !important;
+  }
+
+  .festival-villager--sam {
+    left: 78% !important;
+    top: 70% !important;
+  }
+
+  .festival-villager--player {
+    left: 50% !important;
+    top: 81% !important;
+  }
+
+  .festival-map-overlay {
+    padding: 0 10px 10px;
+  }
+
+  .festival-map-overlay__panel {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .festival-map-overlay__actions {
+    grid-template-columns: 1fr;
   }
 }

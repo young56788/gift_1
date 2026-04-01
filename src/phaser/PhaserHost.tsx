@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from "react";
+import Phaser from "phaser";
 import { useEventBus } from "../bus/EventBusContext";
 import { setGameInstance } from "./gameRegistry";
+import { createPhaserGame } from "./createPhaserGame";
 import type { SceneId } from "../store/types";
 
 type PhaserHostProps = {
@@ -9,6 +11,9 @@ type PhaserHostProps = {
     shrimpCompleted: boolean;
     catanCompleted: boolean;
     festivalUnlocked: boolean;
+    festivalSeen: boolean;
+    timeOfDay: "day" | "night";
+    candleLightsOn: boolean;
   };
 };
 
@@ -21,6 +26,8 @@ export function PhaserHost({ activeScene, mapState }: PhaserHostProps) {
     const container = containerRef.current;
     let cancelled = false;
     let destroyGame: (() => void) | null = null;
+    let retryCount = 0;
+    let rendererType = Phaser.CANVAS;
 
     if (!container) {
       return;
@@ -28,34 +35,57 @@ export function PhaserHost({ activeScene, mapState }: PhaserHostProps) {
 
     setLoadState("loading");
 
-    void import("./createPhaserGame")
-      .then(async ({ createPhaserGame }) => {
-        if (cancelled) {
-          return;
-        }
-
-        const game = await createPhaserGame(container, eventBus, {
-          initialSceneId: activeScene,
-          mapState,
-        });
-
-        if (cancelled) {
-          game.destroy(true);
-          setGameInstance(null);
-          return;
-        }
-
-        destroyGame = () => {
-          game.destroy(true);
-          setGameInstance(null);
-        };
-        setLoadState("ready");
+    const bootGame = () => {
+      void createPhaserGame(container, eventBus, {
+        initialSceneId: activeScene,
+        rendererType,
+        mapState,
       })
-      .catch(() => {
-        if (!cancelled) {
+        .then((game) => {
+          if (cancelled) {
+            game.destroy(true);
+            setGameInstance(null);
+            return;
+          }
+
+          destroyGame = () => {
+            game.destroy(true);
+            setGameInstance(null);
+          };
+          setLoadState("ready");
+        })
+        .catch((error) => {
+          if (cancelled) {
+            return;
+          }
+
+          if (retryCount < 1) {
+            retryCount += 1;
+            window.setTimeout(() => {
+              if (!cancelled) {
+                bootGame();
+              }
+            }, 160);
+            return;
+          }
+
+          const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+          eventBus.events.emit("system/error", {
+            source: "phaser/bootstrap",
+            message,
+            code: "phaser_bootstrap_failed",
+            recoverable: true,
+            actionHint:
+              activeScene === "catan"
+                ? "点击“重试加载卡坦”重新初始化舞台。"
+                : "点击“重试加载地图”重新初始化舞台。",
+          });
+          console.error("Phaser bootstrap failed", error);
           setLoadState("error");
-        }
-      });
+        });
+    };
+
+    bootGame();
 
     return () => {
       cancelled = true;

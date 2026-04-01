@@ -1,3 +1,19 @@
+export type MapCollisionBlocker = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type FestivalCrowdCue = "left" | "right" | "center" | "all";
+
+export type FestivalCelebrationStep = {
+  speaker: string;
+  line: string;
+  crowdCue?: FestivalCrowdCue;
+};
+
 export const mapLocations = [
   {
     id: "shrimp",
@@ -12,9 +28,20 @@ export const mapLocations = [
   {
     id: "festival",
     title: "广场",
-    subtitle: "生日宴会",
+    subtitle: "生日彩蛋",
   },
 ] as const;
+
+export const mapCollisionBlockers: MapCollisionBlocker[] = [
+  { id: "tree-left-trunk", x: 94, y: 292, width: 46, height: 50 },
+  { id: "tree-right-trunk", x: 902, y: 280, width: 48, height: 50 },
+  { id: "lake-core", x: 232, y: 142, width: 296, height: 184 },
+  { id: "lake-center-extension", x: 220, y: 186, width: 324, height: 112 },
+  { id: "lake-left-inner", x: 208, y: 206, width: 30, height: 70 },
+  { id: "lake-right-inner", x: 528, y: 212, width: 28, height: 66 },
+  { id: "lake-top-left-notch", x: 282, y: 126, width: 52, height: 16 },
+  { id: "lake-top-right-notch", x: 424, y: 126, width: 52, height: 16 },
+];
 
 export const mapStatusLabels = {
   available: "可进入",
@@ -25,16 +52,58 @@ export const mapStatusLabels = {
 
 export const mapSceneContent = {
   title: "夜晚小镇地图",
-  subtitle: "方向键 / WASD 移动，靠近后按 E 进入",
+  subtitle: "方向键 / WASD 移动，靠近建筑门口后按 E 进入",
   idlePrompt: "去市场和小岛看看吧。",
   festivalLockedPrompt: "广场还在准备中，需要先完成前两个小游戏。",
+  festivalReadyPrompt: "靠近广场入口，按 E 触发生日晚会。",
+  festivalCompletedPrompt: "广场晚会彩蛋已完成。",
+  festivalCelebratingPrompt: "生日晚会进行中…",
+  festivalGiftLocatePrompt: "礼物在广场中央，靠近后按 E 打开。",
+  festivalGiftPrompt: "靠近礼物按 E 打开生日礼物。",
+  festivalGiftOpenedPrompt: "礼物已打开，烟花还在夜空绽放。",
   prompts: {
-    shrimp: "按 E 进入市场，开始钓虾。",
-    catan: "按 E 前往小岛，开始一场会先压你再让你翻盘的卡坦。",
-    festival: "按 E 进入广场，参加生日宴会。",
+    shrimp: "靠近市场门口，按 E 进入钓虾。",
+    catan: "靠近小岛入口，按 E 开始卡坦。",
+    festival: "靠近广场入口，按 E 开始晚会。",
   },
   labels: {
     shrimpCompleted: "市场\n已完成",
+    catanCompleted: "小岛\n已完成",
+    festivalReady: "广场\n彩蛋待触发",
+    festivalCompleted: "广场\n彩蛋完成",
+  },
+  festivalCelebration: {
+    title: "生日彩蛋晚会",
+    steps: [
+      {
+        speaker: "旁白",
+        line: "广场的灯一盏盏亮起，镇上的人都朝你围了过来。",
+        crowdCue: "all",
+      },
+      {
+        speaker: "Emily",
+        line: "生日快乐，愿你每次回到这里，都有人等你。",
+        crowdCue: "left",
+      },
+      {
+        speaker: "Abigail",
+        line: "今晚你就是主角，愿望会和烟花一起升空。",
+        crowdCue: "right",
+      },
+      {
+        speaker: "Leah",
+        line: "愿你喜欢的日子，都能被认真庆祝。",
+        crowdCue: "center",
+      },
+      {
+        speaker: "大家",
+        line: "生日快乐！",
+        crowdCue: "all",
+      },
+    ] satisfies FestivalCelebrationStep[],
+    continueAction: "继续",
+    finishAction: "收下祝福",
+    skipAction: "跳过",
   },
 };
 
@@ -68,9 +137,12 @@ export const appShellContent = {
     openCatan: "打开卡坦对局",
     openFestival: "打开生日宴会",
     enterMap: "进入地图",
+    previewFestival: "开发预览宴会",
   },
   overlays: {
     festivalLocked: "广场还在准备中，先去市场和小岛看看吧。",
     catanCompleted: "小岛上的局势已经被你翻过来了，广场的灯也跟着亮了。",
+    festivalCompleted: "生日晚会彩蛋已完成，广场重新恢复了平静。",
+    festivalGiftOpened: "你打开了礼物，大家的祝福和烟花一起点亮了夜晚。",
   },
 };

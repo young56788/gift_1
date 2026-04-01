@@ -9,7 +9,12 @@ export type PhaserCommandMap = {
     shrimpCompleted: boolean;
     catanCompleted: boolean;
     festivalUnlocked: boolean;
+    festivalSeen: boolean;
+    timeOfDay: "day" | "night";
+    candleLightsOn: boolean;
   };
+  "map/festival-mode": { mode: "idle" | "prelude" | "celebrating" | "settled" };
+  "map/festival-crowd-cue": { cue: "left" | "right" | "center" | "all" };
   "catan/show-state": CatanBoardSnapshot;
   "catan/rebuild-show-state": CatanMatchSnapshot;
   "shrimp/start": undefined;
@@ -19,6 +24,8 @@ export type PhaserCommandMap = {
 
 export type PhaserEventMap = {
   "map/enter-request": { target: "shrimp" | "catan" | "festival" };
+  "map/festival-easter-egg-request": undefined;
+  "map/festival-gift-opened": { amountText: string; redeemCode: string };
   "catan/action-selected": { actionId: string };
   "catan/request-state": undefined;
   "catan/rebuild-intent-selected": { intent: CatanIntent };
@@ -34,6 +41,18 @@ export type PhaserEventMap = {
   "system/error": {
     source: string;
     message: string;
+    code?: string;
+    recoverable?: boolean;
+    actionHint?: string;
+  };
+  "phaser/debug-state": {
+    reason: string;
+    gameReady: boolean;
+    managedSceneIds: Array<"map" | "shrimp" | "catan">;
+    activeSceneIds: Array<"map" | "shrimp" | "catan">;
+    sleepingSceneIds: Array<"map" | "shrimp" | "catan">;
+    pendingSceneLoads: Array<"map" | "shrimp" | "catan">;
+    pendingSceneUnloads: Array<"map" | "shrimp" | "catan">;
   };
 };
 

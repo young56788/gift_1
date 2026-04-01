@@ -351,7 +351,7 @@ export class CatanGameScene extends Phaser.Scene {
   }
 
   private renderBoardBackground() {
-    if (this.textures.exists("catan-board-reference")) {
+    if (this.canRenderTexture("catan-board-reference")) {
       this.add.image(BOARD_ORIGIN_X, BOARD_ORIGIN_Y, "catan-board-reference").setOrigin(0).setScale(BOARD_SCALE);
       return;
     }
@@ -363,6 +363,38 @@ export class CatanGameScene extends Phaser.Scene {
     }
 
     this.add.rectangle(480, 270, 520, 430, 0x204758, 0.92).setStrokeStyle(2, 0x9dc4b2);
+  }
+
+  private canRenderTexture(textureKey: string) {
+    if (!this.textures.exists(textureKey)) {
+      return false;
+    }
+
+    const texture = this.textures.get(textureKey);
+    if (!texture) {
+      return false;
+    }
+
+    const source = texture.getSourceImage() as
+      | HTMLImageElement
+      | HTMLCanvasElement
+      | HTMLVideoElement
+      | null
+      | undefined;
+    if (!source) {
+      return false;
+    }
+
+    const width =
+      "naturalWidth" in source && typeof source.naturalWidth === "number"
+        ? source.naturalWidth
+        : source.width;
+    const height =
+      "naturalHeight" in source && typeof source.naturalHeight === "number"
+        ? source.naturalHeight
+        : source.height;
+
+    return width > 0 && height > 0;
   }
 
   private renderFatalError(error: unknown) {

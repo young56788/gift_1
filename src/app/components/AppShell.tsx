@@ -1,69 +1,160 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useEventBus } from "../../bus/EventBusContext";
 import { getItemLabel } from "../../config/resources";
 import { PhaserHost } from "../../phaser/PhaserHost";
 import { useGameStore } from "../../store/gameStore";
 import { ScenePanel } from "../../ui/ScenePanel";
 import { TextButton } from "../../ui/TextButton";
-import { FestivalCard } from "../../modules/festival/components/FestivalCard";
-import {
-  buildFestivalSteps,
-  festivalContent,
-} from "../../modules/festival/config/content";
-import {
-  appShellContent,
-} from "../../modules/map/config/content";
+import { FestivalMapOverlay } from "../../modules/festival/components/FestivalMapOverlay";
+import { appShellContent, mapSceneContent } from "../../modules/map/config/content";
 import { shrimpSceneContent } from "../../modules/shrimp/config/content";
 import { CatanCard } from "../../modules/catan/components/CatanCard";
+import type { FestivalCelebrationStep } from "../../modules/map/config/content";
 
-function useBusBridge() {
+type SystemErrorPayload = {
+  source: string;
+  message: string;
+  code?: string;
+  recoverable?: boolean;
+  actionHint?: string;
+};
+
+type PhaserDebugState = {
+  reason: string;
+  gameReady: boolean;
+  managedSceneIds: Array<"map" | "shrimp" | "catan">;
+  activeSceneIds: Array<"map" | "shrimp" | "catan">;
+  sleepingSceneIds: Array<"map" | "shrimp" | "catan">;
+  pendingSceneLoads: Array<"map" | "shrimp" | "catan">;
+  pendingSceneUnloads: Array<"map" | "shrimp" | "catan">;
+};
+
+function useBusBridge(
+  onFestivalGiftOpened?: (payload: { amountText: string; redeemCode: string }) => void,
+  onSystemError?: (payload: SystemErrorPayload) => void,
+) {
   const bus = useEventBus();
   const currentScene = useGameStore((state) => state.ui.currentScene);
+  const mapTimeOfDay = useGameStore((state) => state.ui.mapTimeOfDay);
+  const mapCandleLightsOn = useGameStore((state) => state.ui.mapCandleLightsOn);
   const progress = useGameStore((state) => state.progress);
   const setCurrentScene = useGameStore((state) => state.setCurrentScene);
   const setOverlayMessage = useGameStore((state) => state.setOverlayMessage);
+  const setFestivalSequenceActive = useGameStore((state) => state.setFestivalSequenceActive);
   const markShrimpCompleted = useGameStore((state) => state.markShrimpCompleted);
 
   useEffect(() => {
     return bus.events.subscribe("map/enter-request", ({ target }) => {
-      if (target === "festival" && !progress.festivalUnlocked) {
-        setOverlayMessage(appShellContent.overlays.festivalLocked);
+      if (target === "festival") {
+        if (!progress.festivalUnlocked) {
+          setOverlayMessage(appShellContent.overlays.festivalLocked);
+          return;
+        }
+
+        setCurrentScene("map");
+        setOverlayMessage(null);
+        setFestivalSequenceActive(true);
+        bus.commands.emit("map/festival-mode", { mode: "celebrating" });
         return;
       }
 
+      setFestivalSequenceActive(false);
+      bus.commands.emit("map/festival-mode", { mode: "idle" });
       setOverlayMessage(null);
       setCurrentScene(target);
     });
-  }, [bus.events, progress.festivalUnlocked, setCurrentScene, setOverlayMessage]);
+  }, [
+    bus.commands,
+    bus.events,
+    mapSceneContent.festivalCompletedPrompt,
+    progress.festivalSeen,
+    progress.festivalUnlocked,
+    setCurrentScene,
+    setFestivalSequenceActive,
+    setOverlayMessage,
+  ]);
+
+  useEffect(() => {
+    return bus.events.subscribe("map/festival-easter-egg-request", () => {
+      if (!progress.festivalUnlocked || progress.festivalSeen) {
+        return;
+      }
+
+      setCurrentScene("map");
+      setOverlayMessage(null);
+      setFestivalSequenceActive(true);
+      bus.commands.emit("map/festival-mode", { mode: "celebrating" });
+    });
+  }, [
+    bus.commands,
+    bus.events,
+    progress.festivalSeen,
+    progress.festivalUnlocked,
+    setCurrentScene,
+    setFestivalSequenceActive,
+    setOverlayMessage,
+  ]);
+
+  useEffect(() => {
+    return bus.events.subscribe("map/festival-gift-opened", (payload) => {
+      setOverlayMessage(appShellContent.overlays.festivalGiftOpened);
+      onFestivalGiftOpened?.(payload);
+    });
+  }, [bus.events, onFestivalGiftOpened, setOverlayMessage]);
+
+  useEffect(() => {
+    return bus.events.subscribe("system/error", (payload) => {
+      const hint = payload.actionHint ? `（${payload.actionHint}）` : "";
+      setOverlayMessage(`系统提示（${payload.source}）：${payload.message}${hint}`);
+      onSystemError?.(payload);
+    });
+  }, [bus.events, onSystemError, setOverlayMessage]);
 
   useEffect(() => {
     return bus.events.subscribe("shrimp/completed", (payload) => {
       markShrimpCompleted(payload);
       setCurrentScene("map");
+      setFestivalSequenceActive(false);
+      bus.commands.emit("map/festival-mode", { mode: "idle" });
       setOverlayMessage(
         payload.specialItemFound
           ? shrimpSceneContent.overlayFound
           : shrimpSceneContent.overlayNormal,
       );
     });
-  }, [bus.events, markShrimpCompleted, setCurrentScene, setOverlayMessage]);
+  }, [
+    bus.commands,
+    bus.events,
+    markShrimpCompleted,
+    setCurrentScene,
+    setFestivalSequenceActive,
+    setOverlayMessage,
+  ]);
 
   useEffect(() => {
     return bus.events.subscribe("shrimp/exit", () => {
       setCurrentScene("map");
+      setFestivalSequenceActive(false);
+      bus.commands.emit("map/festival-mode", { mode: "idle" });
       setOverlayMessage(shrimpSceneContent.overlayExit);
     });
-  }, [bus.events, setCurrentScene, setOverlayMessage]);
+  }, [bus.commands, bus.events, setCurrentScene, setFestivalSequenceActive, setOverlayMessage]);
 
   useEffect(() => {
     bus.commands.emit("map/show-state", {
       shrimpCompleted: progress.shrimpCompleted,
       catanCompleted: progress.catanCompleted,
       festivalUnlocked: progress.festivalUnlocked,
+      festivalSeen: progress.festivalSeen,
+      timeOfDay: mapTimeOfDay,
+      candleLightsOn: mapCandleLightsOn,
     });
   }, [
     bus.commands,
+    mapCandleLightsOn,
+    mapTimeOfDay,
     progress.catanCompleted,
+    progress.festivalSeen,
     progress.festivalUnlocked,
     progress.shrimpCompleted,
   ]);
@@ -99,34 +190,102 @@ function useBusBridge() {
 }
 
 export function AppShell() {
-  useBusBridge();
+  const bus = useEventBus();
+  const [giftNote, setGiftNote] = useState<{ amountText: string; redeemCode: string } | null>(null);
+  const [phaserHostNonce, setPhaserHostNonce] = useState(0);
+  const [mapRuntimeError, setMapRuntimeError] = useState<string | null>(null);
+  const [catanRuntimeError, setCatanRuntimeError] = useState<string | null>(null);
+  const [phaserDebugState, setPhaserDebugState] = useState<PhaserDebugState | null>(null);
+  useBusBridge(setGiftNote, (payload) => {
+    if (payload.source.includes("phaser/bootstrap") && ui.currentScene !== "catan") {
+      const hint = payload.actionHint ? `\n${payload.actionHint}` : "";
+      setMapRuntimeError(`${payload.message}${hint}`);
+    }
 
-  const playerName = useGameStore((state) => state.player.name);
+    if (
+      payload.source.includes("map") ||
+      payload.source.includes("scene/load:map") ||
+      payload.code?.startsWith("map_")
+    ) {
+      const hint = payload.actionHint ? `\n${payload.actionHint}` : "";
+      setMapRuntimeError(`${payload.message}${hint}`);
+    }
+
+    if (
+      payload.source.includes("catan") ||
+      (payload.source.includes("phaser/bootstrap") && ui.currentScene === "catan")
+    ) {
+      const hint = payload.actionHint ? `\n${payload.actionHint}` : "";
+      setCatanRuntimeError(`${payload.message}${hint}`);
+    }
+  });
+
   const progress = useGameStore((state) => state.progress);
   const inventory = useGameStore((state) => state.inventory);
   const ui = useGameStore((state) => state.ui);
   const setCurrentScene = useGameStore((state) => state.setCurrentScene);
   const setOverlayMessage = useGameStore((state) => state.setOverlayMessage);
+  const setFestivalSequenceActive = useGameStore((state) => state.setFestivalSequenceActive);
   const markCatanCompleted = useGameStore((state) => state.markCatanCompleted);
   const markFestivalSeen = useGameStore((state) => state.markFestivalSeen);
+
   const activePhaserScene =
     ui.currentScene === "map" || ui.currentScene === "shrimp" || ui.currentScene === "catan"
       ? ui.currentScene
       : null;
-
-  useEffect(() => {
-    if (ui.currentScene === "festival") {
-      markFestivalSeen();
-    }
-  }, [markFestivalSeen, ui.currentScene]);
-
-  const festivalSteps = useMemo(
-    () => buildFestivalSteps(playerName, inventory.specialItemFound),
-    [inventory.specialItemFound, playerName],
-  );
   const specialItemLabel = getItemLabel(inventory.specialItemId);
   const isCatanScene = ui.currentScene === "catan";
   const isMapScene = ui.currentScene === "map";
+  const showDevPreviewActions = import.meta.env.DEV;
+  const showPhaserDebug = import.meta.env.DEV;
+
+  useEffect(() => {
+    return bus.events.subscribe("phaser/debug-state", (payload) => {
+      setPhaserDebugState(payload);
+    });
+  }, [bus.events]);
+
+  useEffect(() => {
+    if (!isMapScene || !ui.festivalSequenceActive) {
+      return;
+    }
+
+    bus.commands.emit("map/festival-mode", { mode: "celebrating" });
+  }, [bus.commands, isMapScene, ui.festivalSequenceActive]);
+
+  useEffect(() => {
+    if (ui.currentScene === "map" || !ui.festivalSequenceActive) {
+      return;
+    }
+
+    setFestivalSequenceActive(false);
+    bus.commands.emit("map/festival-mode", { mode: "idle" });
+  }, [bus.commands, setFestivalSequenceActive, ui.currentScene, ui.festivalSequenceActive]);
+
+  useEffect(() => {
+    if (ui.currentScene === "map") {
+      return;
+    }
+
+    setGiftNote(null);
+  }, [ui.currentScene]);
+
+  useEffect(() => {
+    if (ui.currentScene === "map") {
+      return;
+    }
+
+    setMapRuntimeError(null);
+  }, [ui.currentScene]);
+
+  useEffect(() => {
+    if (ui.currentScene === "catan") {
+      return;
+    }
+
+    setCatanRuntimeError(null);
+  }, [ui.currentScene]);
+
   const mapDynamicItems = useMemo(
     () => [
       ui.overlayMessage ?? appShellContent.hud.dynamicFallback,
@@ -149,6 +308,65 @@ export function AppShell() {
     ],
   );
 
+  const finishFestivalSequence = () => {
+    if (!ui.festivalSequenceActive) {
+      return;
+    }
+
+    markFestivalSeen();
+    setFestivalSequenceActive(false);
+    setOverlayMessage(appShellContent.overlays.festivalCompleted);
+    bus.commands.emit("map/festival-mode", { mode: "settled" });
+  };
+
+  const skipFestivalSequence = () => {
+    if (!ui.festivalSequenceActive) {
+      return;
+    }
+
+    setFestivalSequenceActive(false);
+    markFestivalSeen();
+    setOverlayMessage(appShellContent.overlays.festivalCompleted);
+    bus.commands.emit("map/festival-mode", { mode: "settled" });
+  };
+
+  const handleFestivalStepChange = (step: FestivalCelebrationStep) => {
+    if (!ui.festivalSequenceActive || !step.crowdCue) {
+      return;
+    }
+
+    bus.commands.emit("map/festival-crowd-cue", {
+      cue: step.crowdCue,
+    });
+  };
+
+  const previewFestivalScene = () => {
+    setCurrentScene("map");
+    setOverlayMessage("已进入晚会场景预览。");
+    setFestivalSequenceActive(true);
+    bus.commands.emit("map/festival-mode", { mode: "celebrating" });
+  };
+
+  const retryCatanHost = () => {
+    setOverlayMessage(null);
+    setCatanRuntimeError(null);
+    setPhaserHostNonce((value) => value + 1);
+  };
+
+  const exitCatanToMap = () => {
+    setOverlayMessage(null);
+    setFestivalSequenceActive(false);
+    bus.commands.emit("map/festival-mode", { mode: "idle" });
+    setMapRuntimeError(null);
+    setCurrentScene("map");
+  };
+
+  const retryMapHost = () => {
+    setOverlayMessage(null);
+    setMapRuntimeError(null);
+    setPhaserHostNonce((value) => value + 1);
+  };
+
   return (
     <div className={`app-shell${isCatanScene ? " app-shell--catan" : ""}`}>
       {!isCatanScene ? (
@@ -167,6 +385,9 @@ export function AppShell() {
                   <li key={item}>{item}</li>
                 ))}
               </ul>
+              <div className="map-preview-actions">
+                <TextButton label="预览晚会场景" onClick={previewFestivalScene} />
+              </div>
             </div>
           ) : null}
         </div>
@@ -174,56 +395,116 @@ export function AppShell() {
 
       <div className="app-shell__body">
         <div className="play-column">
-          {ui.currentScene === "catan" ? (
-            <div className="catan-workspace">
-              <div className="catan-workspace__board">
-                <ScenePanel>
-                  <PhaserHost
-                    activeScene="catan"
-                    mapState={{
-                      shrimpCompleted: progress.shrimpCompleted,
-                      catanCompleted: progress.catanCompleted,
-                      festivalUnlocked: progress.festivalUnlocked,
-                    }}
-                  />
-                </ScenePanel>
-              </div>
+          {showPhaserDebug ? (
+            <div className="phaser-debug-panel">
+              <p>currentScene: {ui.currentScene}</p>
+              <p>gameReady: {phaserDebugState ? String(phaserDebugState.gameReady) : "unknown"}</p>
+              <p>
+                activeScenes:{" "}
+                {phaserDebugState && phaserDebugState.activeSceneIds.length > 0
+                  ? phaserDebugState.activeSceneIds.join(", ")
+                  : "none"}
+              </p>
+              <p>
+                managedScenes:{" "}
+                {phaserDebugState && phaserDebugState.managedSceneIds.length > 0
+                  ? phaserDebugState.managedSceneIds.join(", ")
+                  : "none"}
+              </p>
+              <p>
+                sleepingScenes:{" "}
+                {phaserDebugState && phaserDebugState.sleepingSceneIds.length > 0
+                  ? phaserDebugState.sleepingSceneIds.join(", ")
+                  : "none"}
+              </p>
+              <p>
+                pendingLoad:{" "}
+                {phaserDebugState && phaserDebugState.pendingSceneLoads.length > 0
+                  ? phaserDebugState.pendingSceneLoads.join(", ")
+                  : "none"}
+              </p>
+              <p>
+                pendingUnload:{" "}
+                {phaserDebugState && phaserDebugState.pendingSceneUnloads.length > 0
+                  ? phaserDebugState.pendingSceneUnloads.join(", ")
+                  : "none"}
+              </p>
+              <p>reason: {phaserDebugState?.reason ?? "none"}</p>
+            </div>
+          ) : null}
+          <div className={`catan-workspace${isCatanScene ? "" : " catan-workspace--map"}`}>
+            <div className="catan-workspace__board">
+              <ScenePanel>
+                {activePhaserScene ? (
+                  <div className={isCatanScene ? "catan-stage" : "map-stage"}>
+                    <PhaserHost
+                      key={`phaser-host-${phaserHostNonce}`}
+                      activeScene={activePhaserScene}
+                      mapState={{
+                        shrimpCompleted: progress.shrimpCompleted,
+                        catanCompleted: progress.catanCompleted,
+                        festivalUnlocked: progress.festivalUnlocked,
+                        festivalSeen: progress.festivalSeen,
+                        timeOfDay: ui.mapTimeOfDay,
+                        candleLightsOn: ui.mapCandleLightsOn,
+                      }}
+                    />
+                    {isCatanScene && catanRuntimeError ? (
+                      <div className="catan-runtime-alert">
+                        <p>{catanRuntimeError}</p>
+                        <TextButton label="重试加载卡坦" onClick={retryCatanHost} />
+                      </div>
+                    ) : null}
+                    {isMapScene && mapRuntimeError ? (
+                      <div className="catan-runtime-alert">
+                        <p>{mapRuntimeError}</p>
+                        <TextButton label="重试加载地图" onClick={retryMapHost} />
+                      </div>
+                    ) : null}
+                    {isMapScene && ui.festivalSequenceActive ? (
+                      <FestivalMapOverlay
+                        title={mapSceneContent.festivalCelebration.title}
+                        steps={mapSceneContent.festivalCelebration.steps}
+                        continueLabel={mapSceneContent.festivalCelebration.continueAction}
+                        finishLabel={mapSceneContent.festivalCelebration.finishAction}
+                        skipLabel={mapSceneContent.festivalCelebration.skipAction}
+                        onStepChange={handleFestivalStepChange}
+                        onComplete={finishFestivalSequence}
+                        onSkip={skipFestivalSequence}
+                      />
+                    ) : null}
+                    {isMapScene && giftNote ? (
+                      <div className="gift-note-overlay">
+                        <div className="gift-note-paper">
+                          <p className="gift-note-paper__title">礼物纸条</p>
+                          <p className="gift-note-paper__line">金额：{giftNote.amountText}</p>
+                          <p className="gift-note-paper__line">兑换码：{giftNote.redeemCode}</p>
+                          <div className="gift-note-paper__actions">
+                            <TextButton label="收好纸条" onClick={() => setGiftNote(null)} />
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="phaser-idle-state">
+                    <p className="story-copy">{appShellContent.panels.phaserIdle}</p>
+                  </div>
+                )}
+              </ScenePanel>
+            </div>
+            {isCatanScene ? (
               <div className="catan-workspace__sidebar">
                 <CatanCard
                   onComplete={() => {
                     markCatanCompleted();
                     setOverlayMessage(appShellContent.overlays.catanCompleted);
                   }}
-                  onExit={() => setCurrentScene("map")}
+                  onExit={exitCatanToMap}
                 />
               </div>
-            </div>
-          ) : (
-            <>
-              <ScenePanel>
-                {activePhaserScene ? (
-                  <PhaserHost
-                    activeScene={activePhaserScene}
-                    mapState={{
-                      shrimpCompleted: progress.shrimpCompleted,
-                      catanCompleted: progress.catanCompleted,
-                      festivalUnlocked: progress.festivalUnlocked,
-                    }}
-                  />
-                ) : (
-                  <div className="phaser-idle-state">
-                    <p className="story-copy">
-                      {appShellContent.panels.phaserIdle}
-                    </p>
-                  </div>
-                )}
-              </ScenePanel>
-
-              {ui.overlayMessage ? (
-                <p className="overlay-note">{ui.overlayMessage}</p>
-              ) : null}
-            </>
-          )}
+            ) : null}
+          </div>
 
           {ui.currentScene === "intro" ? (
             <ScenePanel
@@ -233,26 +514,27 @@ export function AppShell() {
               <p className="story-copy">
                 {appShellContent.panels.introBody}
               </p>
-              <TextButton
-                label={appShellContent.actions.enterMap}
-                onClick={() => {
-                  setCurrentScene("map");
-                  setOverlayMessage(null);
-                }}
-              />
+              <div className="intro-actions">
+                <TextButton
+                  label={appShellContent.actions.enterMap}
+                  onClick={() => {
+                    setCurrentScene("map");
+                    setOverlayMessage(null);
+                  }}
+                />
+                {showDevPreviewActions ? (
+                  <TextButton
+                    label={appShellContent.actions.previewFestival}
+                    onClick={() => {
+                      setCurrentScene("map");
+                      setOverlayMessage(null);
+                      setFestivalSequenceActive(true);
+                      bus.commands.emit("map/festival-mode", { mode: "celebrating" });
+                    }}
+                  />
+                ) : null}
+              </div>
             </ScenePanel>
-          ) : null}
-
-          {ui.currentScene === "festival" ? (
-            <FestivalCard
-              title={festivalContent.title}
-              subtitle={festivalContent.stageSubtitle}
-              progressLabels={festivalContent.progressLabels}
-              steps={festivalSteps}
-              continueLabel={festivalContent.actions.advance}
-              backLabel={festivalContent.actions.backToMap}
-              onBack={() => setCurrentScene("map")}
-            />
           ) : null}
         </div>
       </div>
