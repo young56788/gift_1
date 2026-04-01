@@ -30,6 +30,10 @@ export async function createPhaserGame(
   eventBus: EventBus,
   bootState: PhaserBootState,
 ) {
+  const debugEnabled =
+    import.meta.env.DEV &&
+    new URLSearchParams(window.location.search).get("debugPhaser") === "1";
+
   const game = new Phaser.Game({
     type: bootState.rendererType ?? Phaser.AUTO,
     width: 960,
@@ -93,6 +97,10 @@ export async function createPhaserGame(
   }
 
   function emitDebugState(reason: string) {
+    if (!debugEnabled) {
+      return;
+    }
+
     eventBus.events.emit("phaser/debug-state", {
       reason,
       gameReady,
