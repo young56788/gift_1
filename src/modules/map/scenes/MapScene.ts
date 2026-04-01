@@ -45,6 +45,19 @@ type CrowdNpc = {
   roamRadiusY: number;
 };
 
+type CrowdMotionConfig = {
+  amplitude: number;
+  durationBase: number;
+  pauseMinMs: number;
+  pauseMaxMs: number;
+  scalePulse: number;
+  roamSpreadX: number;
+  roamSpreadY: number;
+  angleRange: number;
+  durationJitterMin: number;
+  durationJitterMax: number;
+};
+
 type FireworkLaunchConfig = {
   launchX: number;
   peakY: number;
@@ -275,7 +288,12 @@ export class MapScene extends Phaser.Scene {
         direction.normalize();
       }
 
-      const speed = this.festivalMode === "celebrating" ? 152 : 172;
+      const speed =
+        this.festivalMode === "celebrating"
+          ? 152
+          : this.festivalMode === "settled"
+            ? 156
+            : 172;
       const step = (speed * delta) / 1000;
 
       this.tryMovePlayer(direction.x * step, 0);
@@ -810,6 +828,7 @@ export class MapScene extends Phaser.Scene {
         ease: "Sine.easeInOut",
       });
       this.playCrowdCue("all", true);
+      this.launchCelebrationOpeningFireworks();
     }
   }
 
@@ -838,7 +857,7 @@ export class MapScene extends Phaser.Scene {
     let hostAlpha = 0;
     let crowdAlpha = 0;
     let crowdScaleBoost = 0;
-    let playerSpotlightAlpha = 0.16;
+    let playerSpotlightAlpha = 0;
     let playerHaloAlpha = 0.18;
     let playerCrownAlpha = 0.84;
     let playerTitleAlpha = 0.8;
@@ -855,7 +874,7 @@ export class MapScene extends Phaser.Scene {
       hostAlpha = 0;
       crowdAlpha = 0;
       crowdScaleBoost = 0;
-      playerSpotlightAlpha = 0.22;
+      playerSpotlightAlpha = 0;
       playerHaloAlpha = 0.3;
       playerCrownAlpha = 0.98;
       playerTitleAlpha = 0.95;
@@ -875,7 +894,7 @@ export class MapScene extends Phaser.Scene {
       hostAlpha = 1;
       crowdAlpha = 1;
       crowdScaleBoost = 0.1;
-      playerSpotlightAlpha = 0.38;
+      playerSpotlightAlpha = 0;
       playerHaloAlpha = 0.72;
       playerCrownAlpha = 1;
       playerTitleAlpha = 1;
@@ -892,10 +911,10 @@ export class MapScene extends Phaser.Scene {
       glowAlpha = 0.22;
       lightAlpha = 0.62;
       sparkleAlpha = 0.18;
-      hostAlpha = 0;
-      crowdAlpha = 0;
+      hostAlpha = 0.48;
+      crowdAlpha = 0.78;
       crowdScaleBoost = 0;
-      playerSpotlightAlpha = 0.24;
+      playerSpotlightAlpha = 0;
       playerHaloAlpha = 0.38;
       playerCrownAlpha = 0.92;
       playerTitleAlpha = 0.9;
@@ -959,7 +978,18 @@ export class MapScene extends Phaser.Scene {
 
     if (mode === "celebrating") {
       this.startLanternPulse(210, 0.25);
-      this.startCrowdIdleMotion(4, 640);
+      this.startCrowdIdleMotion({
+        amplitude: 4,
+        durationBase: 640,
+        pauseMinMs: 120,
+        pauseMaxMs: 360,
+        scalePulse: 0.03,
+        roamSpreadX: 1,
+        roamSpreadY: 1,
+        angleRange: 4,
+        durationJitterMin: -180,
+        durationJitterMax: 220,
+      });
       this.startCrowdWaveLoop();
       this.startPlayerHighlightPulse(true);
       this.startFireworkShow();
@@ -968,7 +998,18 @@ export class MapScene extends Phaser.Scene {
 
     if (mode === "prelude") {
       this.startLanternPulse(280, 0.16);
-      this.startCrowdIdleMotion(2.8, 760);
+      this.startCrowdIdleMotion({
+        amplitude: 2.8,
+        durationBase: 760,
+        pauseMinMs: 220,
+        pauseMaxMs: 580,
+        scalePulse: 0.026,
+        roamSpreadX: 1.08,
+        roamSpreadY: 1.06,
+        angleRange: 5,
+        durationJitterMin: -210,
+        durationJitterMax: 250,
+      });
       this.stopCrowdWaveLoop();
       this.startPlayerHighlightPulse(false);
       this.stopFireworkShow(true);
@@ -977,7 +1018,18 @@ export class MapScene extends Phaser.Scene {
 
     if (mode === "settled") {
       this.startLanternPulse(340, 0.1);
-      this.startCrowdIdleMotion(2.1, 920);
+      this.startCrowdIdleMotion({
+        amplitude: 1.8,
+        durationBase: 1120,
+        pauseMinMs: 360,
+        pauseMaxMs: 780,
+        scalePulse: 0.018,
+        roamSpreadX: 1.72,
+        roamSpreadY: 1.42,
+        angleRange: 8,
+        durationJitterMin: -320,
+        durationJitterMax: 440,
+      });
       this.stopCrowdWaveLoop();
       this.startPlayerHighlightPulse(false);
       this.stopFireworkShow(true);
@@ -1066,7 +1118,7 @@ export class MapScene extends Phaser.Scene {
     this.playerCrown?.setAngle(0);
   }
 
-  private startCrowdIdleMotion(amplitude: number, durationBase: number) {
+  private startCrowdIdleMotion(config: CrowdMotionConfig) {
     this.stopCrowdIdleMotion();
 
     this.festivalCrowd.forEach((crowdNpc, index) => {
@@ -1074,13 +1126,13 @@ export class MapScene extends Phaser.Scene {
         return;
       }
 
-      this.scheduleCrowdWander(crowdNpc, amplitude, durationBase, index);
+      this.scheduleCrowdWander(crowdNpc, config, index);
       this.crowdIdleTweens.push(
         this.tweens.add({
           targets: crowdNpc.sprite,
-          scaleX: crowdNpc.baseScale + 0.03,
-          scaleY: crowdNpc.baseScale + 0.03,
-          duration: durationBase + 220 + (index % 6) * 48,
+          scaleX: crowdNpc.baseScale + config.scalePulse,
+          scaleY: crowdNpc.baseScale + config.scalePulse,
+          duration: config.durationBase + 220 + (index % 6) * 48,
           repeat: -1,
           yoyo: true,
           ease: "Sine.easeInOut",
@@ -1089,28 +1141,39 @@ export class MapScene extends Phaser.Scene {
     });
   }
 
-  private scheduleCrowdWander(
-    crowdNpc: CrowdNpc,
-    amplitude: number,
-    durationBase: number,
-    index: number,
-  ) {
+  private scheduleCrowdWander(crowdNpc: CrowdNpc, config: CrowdMotionConfig, index: number) {
     const walkOnce = () => {
       if (crowdNpc.sprite.alpha < 0.15) {
         return;
       }
 
+      const roamX = Math.max(
+        6,
+        Math.round(
+          crowdNpc.roamRadiusX *
+            Phaser.Math.FloatBetween(config.roamSpreadX * 0.78, config.roamSpreadX * 1.2),
+        ),
+      );
+      const roamY = Math.max(
+        4,
+        Math.round(
+          crowdNpc.roamRadiusY *
+            Phaser.Math.FloatBetween(config.roamSpreadY * 0.8, config.roamSpreadY * 1.22),
+        ),
+      );
       const targetX =
-        crowdNpc.baseX + Phaser.Math.Between(-crowdNpc.roamRadiusX, crowdNpc.roamRadiusX);
+        crowdNpc.baseX + Phaser.Math.Between(-roamX, roamX);
       const targetY =
         crowdNpc.baseY -
-        amplitude * 0.35 +
-        Phaser.Math.Between(-crowdNpc.roamRadiusY, crowdNpc.roamRadiusY);
+        config.amplitude * 0.32 +
+        Phaser.Math.Between(-roamY, roamY);
       const travelDuration = Math.max(
         280,
-        durationBase + Phaser.Math.Between(-180, 220) + (index % 5) * 36,
+        config.durationBase +
+          Phaser.Math.Between(config.durationJitterMin, config.durationJitterMax) +
+          (index % 5) * 36,
       );
-      const targetAngle = Phaser.Math.Between(-4, 4);
+      const targetAngle = Phaser.Math.Between(-config.angleRange, config.angleRange);
 
       this.crowdIdleTweens.push(
         this.tweens.add({
@@ -1121,7 +1184,10 @@ export class MapScene extends Phaser.Scene {
           duration: travelDuration,
           ease: "Sine.easeInOut",
           onComplete: () => {
-            const pauseTimer = this.time.delayedCall(Phaser.Math.Between(140, 520), walkOnce);
+            const pauseTimer = this.time.delayedCall(
+              Phaser.Math.Between(config.pauseMinMs, config.pauseMaxMs),
+              walkOnce,
+            );
             this.crowdWalkTimers.push(pauseTimer);
           },
         }),
@@ -1198,6 +1264,34 @@ export class MapScene extends Phaser.Scene {
           colors: [0xfff0b3, 0xffd27b, 0xff9ec9, 0xa7ffa3],
           travelMs: 520,
           ringBurst: index === 1,
+        });
+      });
+    });
+  }
+
+  private launchCelebrationOpeningFireworks() {
+    const openingBursts = [
+      { delay: 0, launchX: 732, peakY: 206, radius: 86, count: 34 },
+      { delay: 140, launchX: 806, peakY: 176, radius: 112, count: 48 },
+      { delay: 300, launchX: 880, peakY: 208, radius: 88, count: 36 },
+      { delay: 460, launchX: 770, peakY: 192, radius: 98, count: 40 },
+      { delay: 620, launchX: 842, peakY: 186, radius: 104, count: 44 },
+    ] as const;
+
+    openingBursts.forEach((burst, index) => {
+      this.scheduleFirework(burst.delay, () => {
+        this.launchFirework({
+          launchX: burst.launchX,
+          peakY: burst.peakY,
+          particleCount: burst.count,
+          radius: burst.radius,
+          colors:
+            index % 2 === 0
+              ? [0xfff4be, 0xffd28a, 0xff8fd4, 0xa8e8ff]
+              : [0xfff0b3, 0xffc27a, 0xa7ffa3, 0x98ddff],
+          travelMs: 540,
+          ringBurst: true,
+          doubleBurst: index === 1 || index === 4,
         });
       });
     });
