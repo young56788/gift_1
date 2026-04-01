@@ -20,6 +20,9 @@ export type UiState = {
   currentScene: SceneId;
   overlayMessage: string | null;
   lowPowerMode: boolean;
+  festivalSequenceActive: boolean;
+  mapTimeOfDay: "day" | "night";
+  mapCandleLightsOn: boolean;
 };
 
 export type GameState = {

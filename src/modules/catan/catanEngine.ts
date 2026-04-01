@@ -648,7 +648,7 @@ function distributeResources(state: CatanMatchState, total: number) {
       ...player,
       resources: addResource(player.resources, blessingResource, 1),
     }));
-    lines.push(`寿星好运发动，额外获得 ${resourceLabels[blessingResource]} x1。`);
+    lines.push(`橙橙好运发动，额外获得 ${resourceLabels[blessingResource]} x1。`);
   }
 
   return appendLog(nextState, ...lines);
