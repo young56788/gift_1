@@ -237,13 +237,19 @@ export function AppShell() {
   const isCatanScene = ui.currentScene === "catan";
   const isMapScene = ui.currentScene === "map";
   const showDevPreviewActions = import.meta.env.DEV;
-  const showPhaserDebug = import.meta.env.DEV;
+  const showPhaserDebug =
+    import.meta.env.DEV && new URLSearchParams(window.location.search).get("debugPhaser") === "1";
 
   useEffect(() => {
+    if (!showPhaserDebug) {
+      setPhaserDebugState(null);
+      return;
+    }
+
     return bus.events.subscribe("phaser/debug-state", (payload) => {
       setPhaserDebugState(payload);
     });
-  }, [bus.events]);
+  }, [bus.events, showPhaserDebug]);
 
   useEffect(() => {
     if (!isMapScene || !ui.festivalSequenceActive) {
