@@ -70,7 +70,7 @@ B 负责业务场景（Map/Shrimp）
 1) git status -sb
 2) 本次改动摘要（按模块）
 3) 验证结果（build + 手工路径）
-我确认后再 commit，不要直接 merge master。
+我确认后再 commit，不要直接 merge main。
 ```
 
 ## 7) MCP 联动模板（GitHub/Vercel/Figma）
