@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import Phaser from "phaser";
 import { useEventBus } from "../bus/EventBusContext";
 import { setGameInstance } from "./gameRegistry";
 import { createPhaserGame } from "./createPhaserGame";
@@ -29,7 +28,7 @@ export function PhaserHost({ activeScene, mapState }: PhaserHostProps) {
     let cancelled = false;
     let destroyGame: (() => void) | null = null;
     let retryCount = 0;
-    let rendererType = Phaser.CANVAS;
+    const rendererType = 1;
 
     if (!container) {
       return;

@@ -9,22 +9,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("/node_modules/phaser/")) {
-            if (id.includes("/node_modules/phaser/src/renderer/")) {
-              return "phaser-renderer";
-            }
-
-            if (id.includes("/node_modules/phaser/src/physics/")) {
-              return "phaser-physics";
-            }
-
-            if (id.includes("/node_modules/phaser/src/tilemaps/")) {
-              return "phaser-tilemaps";
-            }
-
-            return "phaser-runtime";
-          }
-
           if (id.includes("/src/modules/map/scenes/")) {
             return "phaser-map-scene";
           }
