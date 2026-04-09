@@ -2,11 +2,8 @@ import type { EventBus } from "../bus/createEventBus";
 import type { CatanBoardSnapshot } from "../modules/catan/types";
 import type { CatanMatchSnapshot } from "../modules/catan/engineTypes";
 import type { SceneId } from "../store/types";
-import Phaser from "phaser";
-import { MapScene } from "../modules/map/scenes/MapScene";
-import { ShrimpScene } from "../modules/shrimp/scenes/ShrimpScene";
-import { CatanGameScene } from "../modules/catan/scenes/CatanGameScene";
 import { setGameInstance } from "./gameRegistry";
+import { loadPhaserRuntime } from "./loadPhaserRuntime";
 import { sceneKeyBySceneId } from "./sceneKeys";
 
 type PhaserBootState = {
@@ -32,6 +29,8 @@ export async function createPhaserGame(
   eventBus: EventBus,
   bootState: PhaserBootState,
 ) {
+  const runtime = await loadPhaserRuntime();
+  const { Phaser } = runtime;
   const debugEnabled =
     import.meta.env.DEV &&
     new URLSearchParams(window.location.search).get("debugPhaser") === "1";
@@ -130,7 +129,7 @@ export async function createPhaserGame(
           return;
         }
 
-        game.scene.add(sceneKeyBySceneId.map, new MapScene(eventBus), false);
+        game.scene.add(sceneKeyBySceneId.map, new runtime.MapScene(eventBus), false);
         return;
       }
 
@@ -139,7 +138,7 @@ export async function createPhaserGame(
           return;
         }
 
-        game.scene.add(sceneKeyBySceneId.shrimp, new ShrimpScene(eventBus), false);
+        game.scene.add(sceneKeyBySceneId.shrimp, new runtime.ShrimpScene(eventBus), false);
         return;
       }
 
@@ -147,7 +146,7 @@ export async function createPhaserGame(
         return;
       }
 
-      game.scene.add(sceneKeyBySceneId.catan, new CatanGameScene(eventBus), false);
+      game.scene.add(sceneKeyBySceneId.catan, new runtime.CatanGameScene(eventBus), false);
       emitDebugState(`scene-added:${sceneId}`);
     })().finally(() => {
       sceneLoadPromises.delete(sceneId);

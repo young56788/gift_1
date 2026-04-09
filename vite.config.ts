@@ -6,22 +6,15 @@ export default defineConfig({
   build: {
     // Phaser runtime is expected to be large and is already isolated from the app entry chunk.
     chunkSizeWarningLimit: 1300,
+    modulePreload: {
+      resolveDependencies(_, deps) {
+        return deps.filter((dep) => !dep.includes("phaser-"));
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes("/node_modules/phaser/")) {
-            if (id.includes("/node_modules/phaser/src/renderer/")) {
-              return "phaser-renderer";
-            }
-
-            if (id.includes("/node_modules/phaser/src/physics/")) {
-              return "phaser-physics";
-            }
-
-            if (id.includes("/node_modules/phaser/src/tilemaps/")) {
-              return "phaser-tilemaps";
-            }
-
             return "phaser-runtime";
           }
 
