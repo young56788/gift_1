@@ -4,6 +4,8 @@ import { setGameInstance } from "./gameRegistry";
 import { createPhaserGame } from "./createPhaserGame";
 import type { SceneId } from "../store/types";
 
+const PHASER_RENDERER_CANVAS = 1;
+
 type PhaserHostProps = {
   activeScene: Extract<SceneId, "map" | "shrimp" | "catan">;
   mapState: {
@@ -28,7 +30,7 @@ export function PhaserHost({ activeScene, mapState }: PhaserHostProps) {
     let cancelled = false;
     let destroyGame: (() => void) | null = null;
     let retryCount = 0;
-    const rendererType = 1;
+    const rendererType = PHASER_RENDERER_CANVAS;
 
     if (!container) {
       return;

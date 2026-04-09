@@ -41,6 +41,15 @@ export async function createPhaserGame(
     height: 540,
     parent: container,
     backgroundColor: "#0b1620",
+    audio: {
+      disableWebAudio: true,
+    },
+    physics: {
+      default: "arcade",
+      arcade: {
+        debug: false,
+      },
+    },
     scene: [],
     scale: {
       mode: Phaser.Scale.FIT,
