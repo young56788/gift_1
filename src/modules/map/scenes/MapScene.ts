@@ -16,6 +16,8 @@ type MapProgressState = {
   catanCompleted: boolean;
   festivalUnlocked: boolean;
   festivalSeen: boolean;
+  fishingChestEligible: boolean;
+  reservoirChestOpened: boolean;
 };
 
 type BuildingEntrance = {
@@ -81,6 +83,7 @@ const mapAssetKeys = {
   gift: "map-gift",
   lights: "map-lights",
   flowers: "map-flowers",
+  chest: "map-chest",
   player: "map-player",
   emily: "map-npc-emily",
   abigail: "map-npc-abigail",
@@ -114,6 +117,8 @@ const mapPlayerSpawnPoint = { x: 486, y: 432 } as const;
 const festivalPlayerSpawnPoint = { x: 796, y: 472 } as const;
 const festivalGiftInteractPoint = { x: 804, y: 430 } as const;
 const festivalGiftInteractRadius = 124;
+const reservoirChestPoint = { x: 564, y: 354 } as const;
+const reservoirChestInteractRadius = 76;
 
 export class MapScene extends Phaser.Scene {
   private readonly bus: EventBus;
@@ -142,6 +147,8 @@ export class MapScene extends Phaser.Scene {
     catanCompleted: false,
     festivalUnlocked: false,
     festivalSeen: false,
+    fishingChestEligible: false,
+    reservoirChestOpened: false,
   };
   private festivalMode: FestivalMode = "idle";
   private festivalAutoTriggered = false;
@@ -152,6 +159,9 @@ export class MapScene extends Phaser.Scene {
   private festivalGift?: Phaser.GameObjects.Image;
   private festivalGiftMarker?: Phaser.GameObjects.Ellipse;
   private festivalGiftHintText?: Phaser.GameObjects.Text;
+  private reservoirChest?: Phaser.GameObjects.Image;
+  private reservoirChestHalo?: Phaser.GameObjects.Ellipse;
+  private reservoirChestHintText?: Phaser.GameObjects.Text;
   private playerSpotlight?: Phaser.GameObjects.Ellipse;
   private playerHalo?: Phaser.GameObjects.Ellipse;
   private playerCrown?: Phaser.GameObjects.Text;
@@ -192,6 +202,7 @@ export class MapScene extends Phaser.Scene {
     this.load.image(mapAssetKeys.gift, "/festival/props/gift.png");
     this.load.image(mapAssetKeys.lights, "/festival/props/lights.png");
     this.load.image(mapAssetKeys.flowers, "/festival/props/flowers.png");
+    this.load.image(mapAssetKeys.chest, "/festival/props/pixelwood/chest-1.png");
     this.load.image(mapAssetKeys.player, "/festival/npc/player.png");
     this.load.image(mapAssetKeys.emily, "/festival/npc/emily.png");
     this.load.image(mapAssetKeys.abigail, "/festival/npc/abigail.png");
@@ -211,6 +222,7 @@ export class MapScene extends Phaser.Scene {
       this.createMapBackdrop();
       this.createTownScenery();
       this.createFestivalDecor();
+      this.createReservoirChestDecor();
       this.createEntrances();
       this.createPlayer();
       this.createHudTexts();
@@ -314,6 +326,12 @@ export class MapScene extends Phaser.Scene {
 
       if (interactPressed && this.canOpenFestivalGift()) {
         this.openFestivalGift();
+        this.updatePrompt();
+        return;
+      }
+
+      if (interactPressed && this.canOpenReservoirChest()) {
+        this.openReservoirChest();
         this.updatePrompt();
         return;
       }
@@ -552,6 +570,32 @@ export class MapScene extends Phaser.Scene {
     });
   }
 
+  private createReservoirChestDecor() {
+    const chestKey = this.resolveTextureKey(mapAssetKeys.chest, 0xb5885a, 20, 18);
+    this.reservoirChestHalo = this.add
+      .ellipse(reservoirChestPoint.x, reservoirChestPoint.y + 8, 96, 42, 0x9ce7ff, 0.24)
+      .setDepth(7.1)
+      .setAlpha(0)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    this.reservoirChest = this.add
+      .image(reservoirChestPoint.x, reservoirChestPoint.y, chestKey)
+      .setOrigin(0.5, 1)
+      .setScale(1.52)
+      .setDepth(7.4)
+      .setAlpha(0);
+    this.reservoirChestHintText = this.add
+      .text(reservoirChestPoint.x, reservoirChestPoint.y - 42, "水库宝箱(E)", {
+        fontFamily: "Trebuchet MS",
+        fontSize: "13px",
+        color: "#dff6ff",
+        stroke: "#122230",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(7.6)
+      .setAlpha(0);
+  }
+
   private createEntrances() {
     this.entrances = [
       this.createEntrance("shrimp", 290, 424, 168, 96),
@@ -590,7 +634,7 @@ export class MapScene extends Phaser.Scene {
     const beacons: Phaser.GameObjects.Arc[] = [];
     const ornaments: Phaser.GameObjects.Image[] = [];
     const markerLabelByTarget: Record<MapTarget, string> = {
-      shrimp: "钓虾入口",
+      shrimp: "钓鱼入口",
       catan: "卡坦岛入口",
       festival: "",
     };
@@ -976,6 +1020,8 @@ export class MapScene extends Phaser.Scene {
       }
     }
 
+    this.refreshReservoirChestState(immediate);
+
     if (mode === "celebrating") {
       this.startLanternPulse(210, 0.25);
       this.startCrowdIdleMotion({
@@ -1208,6 +1254,63 @@ export class MapScene extends Phaser.Scene {
       crowdNpc.sprite.x = crowdNpc.baseX;
       crowdNpc.sprite.angle = 0;
       crowdNpc.sprite.setScale(crowdNpc.baseScale);
+    });
+  }
+
+  private canShowReservoirChest() {
+    return this.locationStatus.festivalSeen && this.locationStatus.fishingChestEligible;
+  }
+
+  private refreshReservoirChestState(immediate: boolean) {
+    const visible = this.canShowReservoirChest();
+    const opened = this.locationStatus.reservoirChestOpened;
+    const chestAlpha = visible ? (opened ? 0.76 : 0.96) : 0;
+    const haloAlpha = visible ? (opened ? 0.14 : 0.34) : 0;
+    const hintAlpha = visible && !opened ? 0.92 : 0;
+
+    this.transitionAlpha(this.reservoirChest, chestAlpha, immediate, 260);
+    this.transitionAlpha(this.reservoirChestHalo, haloAlpha, immediate, 240);
+    this.transitionAlpha(this.reservoirChestHintText, hintAlpha, immediate, 220);
+  }
+
+  private canOpenReservoirChest() {
+    if (!this.player || !this.reservoirChest) {
+      return false;
+    }
+
+    if (!this.canShowReservoirChest() || this.locationStatus.reservoirChestOpened) {
+      return false;
+    }
+
+    const dx = this.player.x - reservoirChestPoint.x;
+    const dy = this.player.y - reservoirChestPoint.y;
+    return dx * dx + dy * dy <= reservoirChestInteractRadius * reservoirChestInteractRadius;
+  }
+
+  private openReservoirChest() {
+    if (!this.reservoirChest || this.locationStatus.reservoirChestOpened) {
+      return;
+    }
+
+    this.locationStatus = {
+      ...this.locationStatus,
+      reservoirChestOpened: true,
+    };
+    this.bus.events.emit("map/reservoir-chest-opened", {
+      itemId: "jade_pendant",
+      itemLabel: "玉石挂坠一个",
+    });
+    this.reservoirChestHintText?.setAlpha(0);
+
+    this.tweens.add({
+      targets: this.reservoirChest,
+      y: this.reservoirChest.y - 8,
+      duration: 140,
+      yoyo: true,
+      ease: "Sine.easeOut",
+      onComplete: () => {
+        this.refreshReservoirChestState(false);
+      },
     });
   }
 
@@ -1770,7 +1873,12 @@ export class MapScene extends Phaser.Scene {
     }
 
     if (this.locationStatus.festivalSeen) {
-      this.progressText.setText("广场晚会：已完成");
+      const chestStatus = this.locationStatus.fishingChestEligible
+        ? this.locationStatus.reservoirChestOpened
+          ? "水库宝箱：已开启"
+          : "水库宝箱：待开启"
+        : "水库宝箱：未触发";
+      this.progressText.setText(`广场晚会：已完成\n${chestStatus}`);
       return;
     }
 
@@ -1813,8 +1921,10 @@ export class MapScene extends Phaser.Scene {
       this.festivalMode === "settled"
     ) {
       if (this.festivalGiftOpened) {
-        this.statusText.setText(mapSceneContent.festivalGiftOpenedPrompt);
-        return;
+        if (this.festivalMode !== "settled" || !this.canShowReservoirChest()) {
+          this.statusText.setText(mapSceneContent.festivalGiftOpenedPrompt);
+          return;
+        }
       }
 
       if (this.canOpenFestivalGift()) {
@@ -1823,6 +1933,20 @@ export class MapScene extends Phaser.Scene {
       }
 
       if (this.festivalMode === "celebrating" || this.festivalMode === "settled") {
+        if (this.festivalMode === "settled" && this.canShowReservoirChest()) {
+          if (this.canOpenReservoirChest()) {
+            this.statusText.setText(mapSceneContent.reservoirChestOpenPrompt);
+            return;
+          }
+
+          this.statusText.setText(
+            this.locationStatus.reservoirChestOpened
+              ? mapSceneContent.reservoirChestOpenedPrompt
+              : mapSceneContent.reservoirChestLocatePrompt,
+          );
+          return;
+        }
+
         this.statusText.setText(mapSceneContent.festivalGiftLocatePrompt);
         return;
       }
@@ -1833,6 +1957,20 @@ export class MapScene extends Phaser.Scene {
 
     if (!this.activeTarget) {
       if (this.locationStatus.festivalSeen) {
+        if (this.canShowReservoirChest()) {
+          if (this.canOpenReservoirChest()) {
+            this.statusText.setText(mapSceneContent.reservoirChestOpenPrompt);
+            return;
+          }
+
+          this.statusText.setText(
+            this.locationStatus.reservoirChestOpened
+              ? mapSceneContent.reservoirChestOpenedPrompt
+              : mapSceneContent.reservoirChestLocatePrompt,
+          );
+          return;
+        }
+
         this.statusText.setText(mapSceneContent.festivalCompletedPrompt);
         return;
       }
@@ -1873,7 +2011,7 @@ export class MapScene extends Phaser.Scene {
     const fallback: Record<MapTarget, { title: string; subtitle: string }> = {
       shrimp: {
         title: "市场",
-        subtitle: "去钓虾",
+        subtitle: "去钓鱼",
       },
       catan: {
         title: "小岛",

@@ -1,6 +1,8 @@
 import { create } from "zustand";
-import { shrimpReward } from "../modules/shrimp/config/content";
+import { shrimpReward, shrimpSceneTuning } from "../modules/shrimp/config/content";
 import type { GameState, SceneId } from "./types";
+
+const jadePendantItemId = "jade_pendant";
 
 type GameStore = GameState & {
   setCurrentScene: (scene: SceneId) => void;
@@ -11,7 +13,13 @@ type GameStore = GameState & {
   markShrimpCompleted: (payload: {
     normalCatchCount: number;
     specialItemFound: boolean;
+    prawnCount: number;
+    totalCatchCount: number;
+    sessionQualifiedForChest: boolean;
+    coinDelta: number;
+    prawnTotalAfterSession: number;
   }) => void;
+  markReservoirChestOpened: () => void;
   markCatanCompleted: () => void;
   markFestivalSeen: () => void;
 };
@@ -19,16 +27,23 @@ type GameStore = GameState & {
 const initialState: GameState = {
   player: {
     name: "橙橙",
+    coins: shrimpSceneTuning.economy.initialCoins,
+    prawnTotal: 0,
   },
   inventory: {
     specialItemFound: false,
     specialItemId: null,
+    jadePendantFound: false,
+    jadePendantItemId: null,
   },
   progress: {
     shrimpCompleted: false,
+    shrimpSessionsPlayed: 0,
     catanCompleted: false,
     festivalUnlocked: false,
     festivalSeen: false,
+    fishingChestEligible: false,
+    reservoirChestOpened: false,
   },
   ui: {
     currentScene: "map",
@@ -77,12 +92,21 @@ export const useGameStore = create<GameStore>((set) => ({
         mapCandleLightsOn: on,
       },
     })),
-  markShrimpCompleted: ({ specialItemFound }) =>
+  markShrimpCompleted: ({ specialItemFound, prawnCount, coinDelta }) =>
     set((state) => {
       const catanCompleted = state.progress.catanCompleted;
+      const nextPrawnTotal = state.player.prawnTotal + prawnCount;
+      const qualifiedForChest =
+        nextPrawnTotal >= shrimpSceneTuning.requiredPrawnTotalForReward;
 
       return {
+        player: {
+          ...state.player,
+          coins: state.player.coins + coinDelta,
+          prawnTotal: nextPrawnTotal,
+        },
         inventory: {
+          ...state.inventory,
           specialItemFound:
             state.inventory.specialItemFound || specialItemFound,
           specialItemId:
@@ -92,10 +116,25 @@ export const useGameStore = create<GameStore>((set) => ({
         progress: {
           ...state.progress,
           shrimpCompleted: true,
+          shrimpSessionsPlayed: state.progress.shrimpSessionsPlayed + 1,
           festivalUnlocked: catanCompleted,
+          fishingChestEligible:
+            state.progress.fishingChestEligible || qualifiedForChest,
         },
       };
     }),
+  markReservoirChestOpened: () =>
+    set((state) => ({
+      inventory: {
+        ...state.inventory,
+        jadePendantFound: true,
+        jadePendantItemId: state.inventory.jadePendantItemId ?? jadePendantItemId,
+      },
+      progress: {
+        ...state.progress,
+        reservoirChestOpened: true,
+      },
+    })),
   markCatanCompleted: () =>
     set((state) => ({
       progress: {

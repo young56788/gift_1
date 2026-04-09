@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useEventBus } from "../../bus/EventBusContext";
-import { getItemLabel } from "../../config/resources";
 import { PhaserHost } from "../../phaser/PhaserHost";
 import { useGameStore } from "../../store/gameStore";
 import { ScenePanel } from "../../ui/ScenePanel";
@@ -19,6 +18,13 @@ type SystemErrorPayload = {
   actionHint?: string;
 };
 
+type NoteCard = {
+  title: string;
+  amountText?: string;
+  redeemCode?: string;
+  itemText?: string;
+};
+
 type PhaserDebugState = {
   reason: string;
   gameReady: boolean;
@@ -29,8 +35,15 @@ type PhaserDebugState = {
   pendingSceneUnloads: Array<"map" | "shrimp" | "catan">;
 };
 
+function formatRemainingGiftPounds(coinBalance: number) {
+  const pounds = Math.max(0, 52 - Math.abs(coinBalance) / 100);
+  const text = pounds.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+  return `${text}英镑`;
+}
+
 function useBusBridge(
   onFestivalGiftOpened?: (payload: { amountText: string; redeemCode: string }) => void,
+  onReservoirChestOpened?: (payload: { itemId: string; itemLabel: string }) => void,
   onSystemError?: (payload: SystemErrorPayload) => void,
 ) {
   const bus = useEventBus();
@@ -38,6 +51,8 @@ function useBusBridge(
   const mapTimeOfDay = useGameStore((state) => state.ui.mapTimeOfDay);
   const mapCandleLightsOn = useGameStore((state) => state.ui.mapCandleLightsOn);
   const progress = useGameStore((state) => state.progress);
+  const playerCoins = useGameStore((state) => state.player.coins);
+  const playerPrawnTotal = useGameStore((state) => state.player.prawnTotal);
   const setCurrentScene = useGameStore((state) => state.setCurrentScene);
   const setOverlayMessage = useGameStore((state) => state.setOverlayMessage);
   const setFestivalSequenceActive = useGameStore((state) => state.setFestivalSequenceActive);
@@ -103,6 +118,13 @@ function useBusBridge(
   }, [bus.events, onFestivalGiftOpened, setOverlayMessage]);
 
   useEffect(() => {
+    return bus.events.subscribe("map/reservoir-chest-opened", (payload) => {
+      setOverlayMessage(`${appShellContent.overlays.reservoirChestOpened}（${payload.itemLabel}）`);
+      onReservoirChestOpened?.(payload);
+    });
+  }, [bus.events, onReservoirChestOpened, setOverlayMessage]);
+
+  useEffect(() => {
     return bus.events.subscribe("system/error", (payload) => {
       const hint = payload.actionHint ? `（${payload.actionHint}）` : "";
       setOverlayMessage(`系统提示（${payload.source}）：${payload.message}${hint}`);
@@ -115,6 +137,9 @@ function useBusBridge(
       markShrimpCompleted(payload);
       setCurrentScene("map");
       setFestivalSequenceActive(false);
+      bus.commands.emit("scene/load", { sceneId: "map" });
+      bus.commands.emit("scene/unload", { sceneId: "shrimp" });
+      bus.commands.emit("scene/unload", { sceneId: "catan" });
       bus.commands.emit("map/festival-mode", { mode: "idle" });
       setOverlayMessage(
         payload.specialItemFound
@@ -135,6 +160,9 @@ function useBusBridge(
     return bus.events.subscribe("shrimp/exit", () => {
       setCurrentScene("map");
       setFestivalSequenceActive(false);
+      bus.commands.emit("scene/load", { sceneId: "map" });
+      bus.commands.emit("scene/unload", { sceneId: "shrimp" });
+      bus.commands.emit("scene/unload", { sceneId: "catan" });
       bus.commands.emit("map/festival-mode", { mode: "idle" });
       setOverlayMessage(shrimpSceneContent.overlayExit);
     });
@@ -146,6 +174,8 @@ function useBusBridge(
       catanCompleted: progress.catanCompleted,
       festivalUnlocked: progress.festivalUnlocked,
       festivalSeen: progress.festivalSeen,
+      fishingChestEligible: progress.fishingChestEligible,
+      reservoirChestOpened: progress.reservoirChestOpened,
       timeOfDay: mapTimeOfDay,
       candleLightsOn: mapCandleLightsOn,
     });
@@ -154,8 +184,10 @@ function useBusBridge(
     mapCandleLightsOn,
     mapTimeOfDay,
     progress.catanCompleted,
+    progress.fishingChestEligible,
     progress.festivalSeen,
     progress.festivalUnlocked,
+    progress.reservoirChestOpened,
     progress.shrimpCompleted,
   ]);
 
@@ -168,6 +200,11 @@ function useBusBridge(
     }
 
     if (currentScene === "shrimp") {
+      bus.commands.emit("shrimp/start", {
+        sessionIndex: progress.shrimpSessionsPlayed,
+        playerCoins,
+        playerPrawnTotal,
+      });
       bus.commands.emit("scene/unload", { sceneId: "map" });
       bus.commands.emit("scene/load", { sceneId: "shrimp" });
       bus.commands.emit("scene/unload", { sceneId: "catan" });
@@ -186,54 +223,71 @@ function useBusBridge(
       bus.commands.emit("scene/unload", { sceneId: "shrimp" });
       bus.commands.emit("scene/unload", { sceneId: "catan" });
     }
-  }, [bus.commands, currentScene]);
+  }, [bus.commands, currentScene, playerCoins, playerPrawnTotal, progress.shrimpSessionsPlayed]);
 }
 
 export function AppShell() {
   const bus = useEventBus();
-  const [giftNote, setGiftNote] = useState<{ amountText: string; redeemCode: string } | null>(null);
+  const [noteCard, setNoteCard] = useState<NoteCard | null>(null);
   const [phaserHostNonce, setPhaserHostNonce] = useState(0);
   const [mapRuntimeError, setMapRuntimeError] = useState<string | null>(null);
   const [catanRuntimeError, setCatanRuntimeError] = useState<string | null>(null);
   const [phaserDebugState, setPhaserDebugState] = useState<PhaserDebugState | null>(null);
-  useBusBridge(setGiftNote, (payload) => {
-    if (payload.source.includes("phaser/bootstrap") && ui.currentScene !== "catan") {
-      const hint = payload.actionHint ? `\n${payload.actionHint}` : "";
-      setMapRuntimeError(`${payload.message}${hint}`);
-    }
-
-    if (
-      payload.source.includes("map") ||
-      payload.source.includes("scene/load:map") ||
-      payload.code?.startsWith("map_")
-    ) {
-      const hint = payload.actionHint ? `\n${payload.actionHint}` : "";
-      setMapRuntimeError(`${payload.message}${hint}`);
-    }
-
-    if (
-      payload.source.includes("catan") ||
-      (payload.source.includes("phaser/bootstrap") && ui.currentScene === "catan")
-    ) {
-      const hint = payload.actionHint ? `\n${payload.actionHint}` : "";
-      setCatanRuntimeError(`${payload.message}${hint}`);
-    }
-  });
 
   const progress = useGameStore((state) => state.progress);
-  const inventory = useGameStore((state) => state.inventory);
+  const player = useGameStore((state) => state.player);
   const ui = useGameStore((state) => state.ui);
   const setCurrentScene = useGameStore((state) => state.setCurrentScene);
   const setOverlayMessage = useGameStore((state) => state.setOverlayMessage);
   const setFestivalSequenceActive = useGameStore((state) => state.setFestivalSequenceActive);
+  const markReservoirChestOpened = useGameStore((state) => state.markReservoirChestOpened);
   const markCatanCompleted = useGameStore((state) => state.markCatanCompleted);
   const markFestivalSeen = useGameStore((state) => state.markFestivalSeen);
+
+  useBusBridge(
+    ({ amountText, redeemCode }) => {
+      setNoteCard({
+        title: "礼物纸条",
+        amountText: player.coins < 0 ? formatRemainingGiftPounds(player.coins) : amountText,
+        redeemCode,
+      });
+    },
+    ({ itemLabel }) => {
+      markReservoirChestOpened();
+      setNoteCard({
+        title: "玉石宝箱",
+        itemText: itemLabel,
+      });
+    },
+    (payload) => {
+      if (payload.source.includes("phaser/bootstrap") && ui.currentScene !== "catan") {
+        const hint = payload.actionHint ? `\n${payload.actionHint}` : "";
+        setMapRuntimeError(`${payload.message}${hint}`);
+      }
+
+      if (
+        payload.source.includes("map") ||
+        payload.source.includes("scene/load:map") ||
+        payload.code?.startsWith("map_")
+      ) {
+        const hint = payload.actionHint ? `\n${payload.actionHint}` : "";
+        setMapRuntimeError(`${payload.message}${hint}`);
+      }
+
+      if (
+        payload.source.includes("catan") ||
+        (payload.source.includes("phaser/bootstrap") && ui.currentScene === "catan")
+      ) {
+        const hint = payload.actionHint ? `\n${payload.actionHint}` : "";
+        setCatanRuntimeError(`${payload.message}${hint}`);
+      }
+    },
+  );
 
   const activePhaserScene =
     ui.currentScene === "map" || ui.currentScene === "shrimp" || ui.currentScene === "catan"
       ? ui.currentScene
       : null;
-  const specialItemLabel = getItemLabel(inventory.specialItemId);
   const isCatanScene = ui.currentScene === "catan";
   const isMapScene = ui.currentScene === "map";
   const showDevPreviewActions = import.meta.env.DEV;
@@ -273,7 +327,7 @@ export function AppShell() {
       return;
     }
 
-    setGiftNote(null);
+    setNoteCard(null);
   }, [ui.currentScene]);
 
   useEffect(() => {
@@ -293,25 +347,8 @@ export function AppShell() {
   }, [ui.currentScene]);
 
   const mapDynamicItems = useMemo(
-    () => [
-      ui.overlayMessage ?? appShellContent.hud.dynamicFallback,
-      `${appShellContent.hud.shrimpStatusLabel}：${progress.shrimpCompleted ? "已完成" : "待前往"}`,
-      `${appShellContent.hud.catanStatusLabel}：${progress.catanCompleted ? "已完成" : "待前往"}`,
-      `${appShellContent.hud.festivalStatusLabel}：${progress.festivalUnlocked ? "已解锁" : "未解锁"}`,
-      `${appShellContent.hud.specialItemLabel}：${
-        inventory.specialItemFound
-          ? specialItemLabel ?? appShellContent.hud.specialItemMissing
-          : appShellContent.hud.specialItemMissing
-      }`,
-    ],
-    [
-      inventory.specialItemFound,
-      progress.catanCompleted,
-      progress.festivalUnlocked,
-      progress.shrimpCompleted,
-      specialItemLabel,
-      ui.overlayMessage,
-    ],
+    () => [`${appShellContent.hud.coinsLabel}：${player.coins}`],
+    [player.coins],
   );
 
   const finishFestivalSequence = () => {
@@ -451,6 +488,8 @@ export function AppShell() {
                         catanCompleted: progress.catanCompleted,
                         festivalUnlocked: progress.festivalUnlocked,
                         festivalSeen: progress.festivalSeen,
+                        fishingChestEligible: progress.fishingChestEligible,
+                        reservoirChestOpened: progress.reservoirChestOpened,
                         timeOfDay: ui.mapTimeOfDay,
                         candleLightsOn: ui.mapCandleLightsOn,
                       }}
@@ -479,14 +518,21 @@ export function AppShell() {
                         onSkip={skipFestivalSequence}
                       />
                     ) : null}
-                    {isMapScene && giftNote ? (
+                    {isMapScene && noteCard ? (
                       <div className="gift-note-overlay">
                         <div className="gift-note-paper">
-                          <p className="gift-note-paper__title">礼物纸条</p>
-                          <p className="gift-note-paper__line">金额：{giftNote.amountText}</p>
-                          <p className="gift-note-paper__line">兑换码：{giftNote.redeemCode}</p>
+                          <p className="gift-note-paper__title">{noteCard.title}</p>
+                          {noteCard.amountText ? (
+                            <p className="gift-note-paper__line">金额：{noteCard.amountText}</p>
+                          ) : null}
+                          {noteCard.itemText ? (
+                            <p className="gift-note-paper__line">内容：{noteCard.itemText}</p>
+                          ) : null}
+                          {noteCard.redeemCode ? (
+                            <p className="gift-note-paper__line">暗号：{noteCard.redeemCode}</p>
+                          ) : null}
                           <div className="gift-note-paper__actions">
-                            <TextButton label="收好纸条" onClick={() => setGiftNote(null)} />
+                            <TextButton label="收好纸条" onClick={() => setNoteCard(null)} />
                           </div>
                         </div>
                       </div>

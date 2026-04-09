@@ -41,3 +41,9 @@
 - 当前构建命令：`npm run build`
 - 构建通过。
 - 仍存在 `phaser-runtime` chunk 偏大的 Vite warning，但 Phaser 已被拆出首屏主包，属于已知非阻塞问题。
+
+## 已知非阻塞构建项（记录）
+- 记录时间：2026-04-09
+- 项：`dist/assets/phaser-runtime-*.js` 体积超过 Vite 默认 chunk 警戒线（500kB）告警。
+- 现状：不影响当前功能验收和发布阻断，主流程可正常运行。
+- 处理策略：在后续稳定版本中评估进一步按场景/能力拆分运行时代码（`manualChunks` 或更细粒度动态导入），并保持对首屏包体积的回归检查。

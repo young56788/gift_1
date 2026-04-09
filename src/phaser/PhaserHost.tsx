@@ -12,6 +12,8 @@ type PhaserHostProps = {
     catanCompleted: boolean;
     festivalUnlocked: boolean;
     festivalSeen: boolean;
+    fishingChestEligible: boolean;
+    reservoirChestOpened: boolean;
     timeOfDay: "day" | "night";
     candleLightsOn: boolean;
   };
