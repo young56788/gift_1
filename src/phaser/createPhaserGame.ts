@@ -17,6 +17,8 @@ type PhaserBootState = {
     catanCompleted: boolean;
     festivalUnlocked: boolean;
     festivalSeen: boolean;
+    fishingChestEligible: boolean;
+    reservoirChestOpened: boolean;
     timeOfDay: "day" | "night";
     candleLightsOn: boolean;
   };
@@ -60,6 +62,11 @@ export async function createPhaserGame(
   let latestFestivalMode: MapFestivalMode = "idle";
   let latestCatanState: CatanBoardSnapshot | null = null;
   let latestCatanRebuildState: CatanMatchSnapshot | null = null;
+  let latestShrimpStart = {
+    sessionIndex: 0,
+    playerCoins: 0,
+    playerPrawnTotal: 0,
+  };
   let desiredActiveScene: LoadableSceneId | null = bootState.initialSceneId;
   let destroyed = false;
   let gameReady = false;
@@ -204,6 +211,10 @@ export async function createPhaserGame(
       if (latestCatanRebuildState) {
         eventBus.commands.emit("catan/rebuild-show-state", latestCatanRebuildState);
       }
+    }
+
+    if (sceneId === "shrimp") {
+      eventBus.commands.emit("shrimp/start", latestShrimpStart);
     }
   }
 
@@ -352,6 +363,9 @@ export async function createPhaserGame(
     }),
     eventBus.commands.subscribe("catan/rebuild-show-state", (payload) => {
       latestCatanRebuildState = payload;
+    }),
+    eventBus.commands.subscribe("shrimp/start", (payload) => {
+      latestShrimpStart = payload;
     }),
   ];
 

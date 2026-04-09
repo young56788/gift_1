@@ -3,17 +3,24 @@ export type SceneId = "intro" | "map" | "shrimp" | "catan" | "festival";
 export type InventoryState = {
   specialItemFound: boolean;
   specialItemId: string | null;
+  jadePendantFound: boolean;
+  jadePendantItemId: string | null;
 };
 
 export type ProgressState = {
   shrimpCompleted: boolean;
+  shrimpSessionsPlayed: number;
   catanCompleted: boolean;
   festivalUnlocked: boolean;
   festivalSeen: boolean;
+  fishingChestEligible: boolean;
+  reservoirChestOpened: boolean;
 };
 
 export type PlayerState = {
   name: string;
+  coins: number;
+  prawnTotal: number;
 };
 
 export type UiState = {

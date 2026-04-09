@@ -10,6 +10,8 @@ export type PhaserCommandMap = {
     catanCompleted: boolean;
     festivalUnlocked: boolean;
     festivalSeen: boolean;
+    fishingChestEligible: boolean;
+    reservoirChestOpened: boolean;
     timeOfDay: "day" | "night";
     candleLightsOn: boolean;
   };
@@ -17,7 +19,11 @@ export type PhaserCommandMap = {
   "map/festival-crowd-cue": { cue: "left" | "right" | "center" | "all" };
   "catan/show-state": CatanBoardSnapshot;
   "catan/rebuild-show-state": CatanMatchSnapshot;
-  "shrimp/start": undefined;
+  "shrimp/start": {
+    sessionIndex: number;
+    playerCoins: number;
+    playerPrawnTotal: number;
+  };
   "phaser/pause": undefined;
   "phaser/resume": undefined;
 };
@@ -26,6 +32,7 @@ export type PhaserEventMap = {
   "map/enter-request": { target: "shrimp" | "catan" | "festival" };
   "map/festival-easter-egg-request": undefined;
   "map/festival-gift-opened": { amountText: string; redeemCode: string };
+  "map/reservoir-chest-opened": { itemId: string; itemLabel: string };
   "catan/action-selected": { actionId: string };
   "catan/request-state": undefined;
   "catan/rebuild-intent-selected": { intent: CatanIntent };
@@ -34,6 +41,26 @@ export type PhaserEventMap = {
     completed: boolean;
     normalCatchCount: number;
     specialItemFound: boolean;
+    prawnCount: number;
+    totalCatchCount: number;
+    sessionQualifiedForChest: boolean;
+    castCount: number;
+    perfectCount: number;
+    goodCount: number;
+    missCount: number;
+    timeoutCount: number;
+    catchBreakdown: {
+      silverFish: number;
+      carp: number;
+      bass: number;
+      catfish: number;
+      prawn: number;
+    };
+    sessionCost: number;
+    sessionSurcharge: number;
+    sessionReward: number;
+    coinDelta: number;
+    prawnTotalAfterSession: number;
   };
   "shrimp/exit": {
     completed: boolean;

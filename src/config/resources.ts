@@ -17,7 +17,12 @@ export const resourceCatalog: {
     grilled_shrimp_plate: {
       label: "动画烤虾",
       iconPath: null,
-      note: "钓虾彩蛋道具，后续可以接入图标和宴会特写图。",
+      note: "钓鱼奖励道具，后续可以接入图标和宴会特写图。",
+    },
+    jade_pendant: {
+      label: "玉石挂坠一个",
+      iconPath: null,
+      note: "晚会后水库宝箱奖励。",
     },
   },
   modules: {

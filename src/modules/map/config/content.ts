@@ -18,7 +18,7 @@ export const mapLocations = [
   {
     id: "shrimp",
     title: "市场",
-    subtitle: "去钓虾",
+    subtitle: "去钓鱼",
   },
   {
     id: "catan",
@@ -61,8 +61,11 @@ export const mapSceneContent = {
   festivalGiftLocatePrompt: "礼物在广场中央，靠近后按 E 打开。",
   festivalGiftPrompt: "靠近礼物按 E 打开生日礼物。",
   festivalGiftOpenedPrompt: "礼物已打开，烟花还在夜空绽放。",
+  reservoirChestLocatePrompt: "晚会后水库边出现了宝箱，过去看看。",
+  reservoirChestOpenPrompt: "靠近水库宝箱，按 E 打开。",
+  reservoirChestOpenedPrompt: "水库宝箱已经打开，玉石挂坠一个已收好。",
   prompts: {
-    shrimp: "靠近市场门口，按 E 进入钓虾。",
+    shrimp: "靠近市场门口，按 E 进入钓鱼。",
     catan: "靠近小岛入口，按 E 开始卡坦。",
     festival: "靠近广场入口，按 E 开始晚会。",
   },
@@ -119,6 +122,11 @@ export const appShellContent = {
     dynamicTitle: "动态栏",
     dynamicFallback: "去市场和小岛看看吧。",
     specialItemLabel: "特别道具",
+    jadePendantLabel: "晚会礼物",
+    reservoirChestStatusLabel: "水库宝箱",
+    coinsLabel: "游戏币",
+    prawnTotalLabel: "累计罗氏虾",
+    fishingSessionsLabel: "钓鱼局数",
     specialItemMissing: "尚未获得",
     shrimpStatusLabel: "市场",
     catanStatusLabel: "小岛",
@@ -127,14 +135,14 @@ export const appShellContent = {
   panels: {
     phaserTitle: "Phaser 舞台",
     phaserSubtitle: "地图和小游戏在这里运行",
-    phaserIdle: "当前场景不需要 Phaser。进入地图或钓虾时，再按需加载地图运行时。",
+    phaserIdle: "当前场景不需要 Phaser。进入地图或钓鱼时，再按需加载地图运行时。",
     progressTitle: "全局进度",
     progressSubtitle: "React 侧唯一业务真相源",
     controlsTitle: "控制台",
     controlsSubtitle: "用来切换壳层场景和占位模块",
     introTitle: "入口页",
     introSubtitle: "当前先做文字引导占位",
-    introBody: "夜晚已经降临，小镇的灯一点点亮起来。去市场钓虾，再去小岛看看，广场还在准备中。",
+    introBody: "夜晚已经降临，小镇的灯一点点亮起来。去市场钓鱼，再去小岛看看，广场还在准备中。",
   },
   actions: {
     goHome: "回到首页",
@@ -149,5 +157,6 @@ export const appShellContent = {
     catanCompleted: "小岛上的局势已经被你翻过来了，广场的灯也跟着亮了。",
     festivalCompleted: "生日晚会彩蛋已完成，广场重新恢复了平静。",
     festivalGiftOpened: "你打开了礼物，大家的祝福和烟花一起点亮了夜晚。",
+    reservoirChestOpened: "水库宝箱打开了，你收到了玉石挂坠一个。",
   },
 };
