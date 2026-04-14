@@ -18,6 +18,7 @@ type MapProgressState = {
   festivalSeen: boolean;
   fishingChestEligible: boolean;
   reservoirChestOpened: boolean;
+  playerCoins: number;
 };
 
 type BuildingEntrance = {
@@ -114,11 +115,11 @@ const crowdSpritePool = [
 
 const crowdTintPalette = [0xffffff, 0xf8f7e2, 0xf2ffe4, 0xfff0dd] as const;
 const mapPlayerSpawnPoint = { x: 486, y: 432 } as const;
-const festivalPlayerSpawnPoint = { x: 796, y: 472 } as const;
 const festivalGiftInteractPoint = { x: 804, y: 430 } as const;
 const festivalGiftInteractRadius = 124;
 const reservoirChestPoint = { x: 564, y: 354 } as const;
 const reservoirChestInteractRadius = 76;
+const playerHitboxSize = { width: 20, height: 14 } as const;
 
 export class MapScene extends Phaser.Scene {
   private readonly bus: EventBus;
@@ -149,6 +150,7 @@ export class MapScene extends Phaser.Scene {
     festivalSeen: false,
     fishingChestEligible: false,
     reservoirChestOpened: false,
+    playerCoins: 0,
   };
   private festivalMode: FestivalMode = "idle";
   private festivalAutoTriggered = false;
@@ -235,8 +237,6 @@ export class MapScene extends Phaser.Scene {
 
       this.cleanupFns.push(
         this.bus.commands.subscribe("map/show-state", (payload) => {
-          const wasUnlocked = this.locationStatus.festivalUnlocked;
-
           this.locationStatus = payload;
           if (payload.festivalSeen) {
             this.festivalAutoTriggered = true;
@@ -245,18 +245,6 @@ export class MapScene extends Phaser.Scene {
           this.refreshEntranceDecor();
           this.applyFestivalVisualState(false);
           this.updatePrompt();
-
-          if (
-            !wasUnlocked &&
-            payload.festivalUnlocked &&
-            !payload.festivalSeen &&
-            !this.festivalAutoTriggered
-          ) {
-            this.festivalAutoTriggered = true;
-            this.time.delayedCall(360, () => {
-              this.bus.events.emit("map/festival-easter-egg-request", undefined);
-            });
-          }
         }),
         this.bus.commands.subscribe("map/festival-mode", ({ mode }) => {
           this.setFestivalMode(mode);
@@ -515,24 +503,29 @@ export class MapScene extends Phaser.Scene {
 
     const crowdRows = [
       {
-        y: 352,
+        y: 326,
+        scale: 1.64,
+        xValues: [112, 166, 220, 274, 334, 402, 478, 554, 630, 706, 782, 858, 918],
+      },
+      {
+        y: 356,
         scale: 1.76,
-        xValues: [170, 230, 300, 370, 450, 530, 620, 700, 780, 860, 920],
+        xValues: [96, 154, 212, 270, 332, 404, 486, 568, 650, 732, 814, 896],
       },
       {
-        y: 390,
+        y: 392,
         scale: 1.9,
-        xValues: [140, 210, 280, 350, 430, 510, 590, 670, 750, 830, 910],
+        xValues: [126, 190, 256, 324, 398, 476, 554, 632, 710, 788, 866],
       },
       {
-        y: 428,
+        y: 430,
         scale: 2.02,
-        xValues: [180, 250, 320, 400, 480, 560, 640, 720, 800, 880],
+        xValues: [156, 224, 296, 372, 450, 528, 606, 684, 762, 840],
       },
       {
         y: 468,
-        scale: 2.08,
-        xValues: [220, 300, 380, 460, 540, 620, 700, 780, 860],
+        scale: 2.1,
+        xValues: [210, 286, 362, 438, 514, 590, 666, 742, 818],
       },
     ] as const;
 
@@ -598,9 +591,21 @@ export class MapScene extends Phaser.Scene {
 
   private createEntrances() {
     this.entrances = [
-      this.createEntrance("shrimp", 290, 424, 168, 96),
-      this.createEntrance("catan", 680, 378, 186, 144),
-      this.createEntrance("festival", 806, 430, 146, 102),
+      this.createEntrance("shrimp", 290, 424, 168, 96, {
+        triggerOffsetY: -70,
+        triggerWidth: playerHitboxSize.width,
+        triggerHeight: playerHitboxSize.height,
+      }),
+      this.createEntrance("catan", 680, 378, 186, 144, {
+        triggerOffsetY: -64,
+        triggerWidth: playerHitboxSize.width,
+        triggerHeight: playerHitboxSize.height,
+      }),
+      this.createEntrance("festival", 806, 430, 146, 102, {
+        triggerOffsetY: -48,
+        triggerWidth: playerHitboxSize.width * 2.5,
+        triggerHeight: playerHitboxSize.height * 2.5,
+      }),
     ];
   }
 
@@ -610,14 +615,23 @@ export class MapScene extends Phaser.Scene {
     centerY: number,
     width: number,
     height: number,
+    options?: {
+      triggerOffsetY?: number;
+      triggerWidth?: number;
+      triggerHeight?: number;
+    },
   ) {
     const meta = this.getLocationMeta(target);
+    const triggerWidth = options?.triggerWidth ?? width;
+    const triggerHeight = options?.triggerHeight ?? height;
+    const triggerCenterY = centerY + (options?.triggerOffsetY ?? 0);
     const triggerRect = new Phaser.Geom.Rectangle(
-      centerX - width / 2,
-      centerY - height / 2,
-      width,
-      height,
+      centerX - triggerWidth / 2,
+      triggerCenterY - triggerHeight / 2,
+      triggerWidth,
+      triggerHeight,
     );
+    const markerCenterY = triggerCenterY - 10;
     const doorPad = this.add
       .rectangle(centerX, centerY, width, height, 0x1b2d38, 0)
       .setStrokeStyle(1, 0x8cae97, 0)
@@ -636,7 +650,7 @@ export class MapScene extends Phaser.Scene {
     const markerLabelByTarget: Record<MapTarget, string> = {
       shrimp: "钓鱼入口",
       catan: "卡坦岛入口",
-      festival: "",
+      festival: "晚会入口",
     };
     const markerColorByTarget: Record<MapTarget, number> = {
       shrimp: 0x9be3ff,
@@ -648,11 +662,10 @@ export class MapScene extends Phaser.Scene {
       catan: "#ffe9be",
       festival: "#f8f2dc",
     };
-    const markerYOffset = target === "shrimp" ? 40 : target === "catan" ? 42 : 30;
     const markerDot = this.add
       .circle(
         centerX,
-        centerY - height / 2 - markerYOffset,
+        markerCenterY - 12,
         4.5,
         markerColorByTarget[target],
         target === "festival" ? 0 : 0.56,
@@ -661,7 +674,7 @@ export class MapScene extends Phaser.Scene {
       .setAlpha(target === "festival" ? 0 : 0.56)
       .setBlendMode(Phaser.BlendModes.ADD);
     const markerLabel = this.add
-      .text(centerX, centerY - height / 2 - markerYOffset + 13, markerLabelByTarget[target], {
+      .text(centerX, markerCenterY + 2, markerLabelByTarget[target], {
         fontFamily: "Trebuchet MS",
         fontSize: "12px",
         color: markerTextColorByTarget[target],
@@ -692,13 +705,13 @@ export class MapScene extends Phaser.Scene {
     }
 
     const signPlate = this.add
-      .rectangle(centerX, centerY - height / 2 - 16, 116, 26, 0x0f1a24, 0.74)
+      .rectangle(centerX, markerCenterY - 14, 116, 26, 0x0f1a24, 0.74)
       .setStrokeStyle(1, 0xd8c28d, 0.24)
       .setDepth(10.1)
       .setAlpha(0);
 
     const signText = this.add
-      .text(centerX, centerY - height / 2 - 16, meta.title, {
+      .text(centerX, markerCenterY - 14, meta.title, {
         fontFamily: "Trebuchet MS",
         fontSize: "12px",
         color: "#f1e4c1",
@@ -708,13 +721,13 @@ export class MapScene extends Phaser.Scene {
       .setAlpha(0);
 
     const keyHintPlate = this.add
-      .circle(centerX + width / 2 - 14, centerY + height / 2 - 12, 10, 0x121a22, 0.72)
+      .circle(centerX, markerCenterY + 10, 10, 0x121a22, 0.72)
       .setStrokeStyle(1, 0xddc89b, 0.32)
       .setDepth(10.2)
       .setAlpha(0);
 
     const keyHintText = this.add
-      .text(centerX + width / 2 - 14, centerY + height / 2 - 12, "E", {
+      .text(centerX, markerCenterY + 10, "E", {
         fontFamily: "Trebuchet MS",
         fontSize: "11px",
         color: "#efe3c5",
@@ -842,15 +855,20 @@ export class MapScene extends Phaser.Scene {
 
   private setFestivalMode(nextMode: FestivalMode) {
     const modeChanged = this.festivalMode !== nextMode;
+
+    if (nextMode === "settled") {
+      this.locationStatus = {
+        ...this.locationStatus,
+        festivalSeen: true,
+        festivalUnlocked: true,
+      };
+      this.refreshEntranceDecor();
+    }
+
     this.festivalMode = nextMode;
-    const immediateVisual = !modeChanged || nextMode === "celebrating";
+    const immediateVisual = nextMode === "settled" ? true : !modeChanged;
     this.applyFestivalVisualState(immediateVisual);
     this.updatePrompt();
-
-    if (modeChanged && nextMode === "celebrating") {
-      this.festivalHosts.forEach((host) => host.setAlpha(1));
-      this.festivalCrowd.forEach((crowdNpc) => crowdNpc.sprite.setAlpha(1));
-    }
 
     if (modeChanged && nextMode === "prelude") {
       this.time.delayedCall(120, () => {
@@ -862,29 +880,17 @@ export class MapScene extends Phaser.Scene {
 
     if (modeChanged && nextMode === "celebrating") {
       this.festivalGiftOpened = false;
-      this.placePlayerForFestivalStart();
-      this.cameras.main.shake(220, 0.0024);
-      this.tweens.add({
-        targets: this.cameras.main,
-        zoom: 1.04,
-        duration: 280,
-        yoyo: true,
-        ease: "Sine.easeInOut",
-      });
       this.playCrowdCue("all", true);
       this.launchCelebrationOpeningFireworks();
     }
-  }
 
-  private placePlayerForFestivalStart() {
-    if (!this.player) {
-      return;
+    if (modeChanged && nextMode === "settled") {
+      this.time.delayedCall(40, () => {
+        if (this.getEffectiveFestivalMode() === "settled") {
+          this.playCrowdCue("all", false);
+        }
+      });
     }
-
-    this.player.setPosition(festivalPlayerSpawnPoint.x, festivalPlayerSpawnPoint.y);
-    this.player.setFlipX(false);
-    this.player.setDepth(12 + this.player.y / 1000);
-    this.syncPlayerSignatureDecor();
   }
 
   private applyFestivalVisualState(immediate: boolean) {
@@ -913,36 +919,36 @@ export class MapScene extends Phaser.Scene {
       cakeAlpha = 0.82;
       giftAlpha = 0;
       glowAlpha = 0.26;
-      lightAlpha = 0.72;
-      sparkleAlpha = 0.28;
-      hostAlpha = 0;
-      crowdAlpha = 0;
-      crowdScaleBoost = 0;
+      lightAlpha = 0.78;
+      sparkleAlpha = 0.2;
+      hostAlpha = 0.56;
+      crowdAlpha = 0.48;
+      crowdScaleBoost = 0.03;
       playerSpotlightAlpha = 0;
-      playerHaloAlpha = 0.3;
-      playerCrownAlpha = 0.98;
-      playerTitleAlpha = 0.95;
-      playerScale = 2.34;
+      playerHaloAlpha = 0.28;
+      playerCrownAlpha = 0.94;
+      playerTitleAlpha = 0.92;
+      playerScale = 2.32;
       playerTint = 0xffedd2;
     }
 
     if (mode === "celebrating") {
-      tableAlpha = 1;
-      cakeAlpha = 1;
-      giftAlpha = 1;
+      tableAlpha = 0.96;
+      cakeAlpha = 0.98;
+      giftAlpha = 0.98;
       giftMarkerAlpha = this.festivalGiftOpened ? 0 : 0.74;
-      giftHintAlpha = this.festivalGiftOpened ? 0 : 0.96;
-      glowAlpha = 0.58;
-      lightAlpha = 1;
-      sparkleAlpha = 0.92;
-      hostAlpha = 1;
-      crowdAlpha = 1;
-      crowdScaleBoost = 0.1;
+      giftHintAlpha = this.festivalGiftOpened ? 0 : 0.92;
+      glowAlpha = 0.44;
+      lightAlpha = 0.92;
+      sparkleAlpha = 0.58;
+      hostAlpha = 0.96;
+      crowdAlpha = 0.96;
+      crowdScaleBoost = 0.07;
       playerSpotlightAlpha = 0;
-      playerHaloAlpha = 0.72;
-      playerCrownAlpha = 1;
-      playerTitleAlpha = 1;
-      playerScale = 2.4;
+      playerHaloAlpha = 0.6;
+      playerCrownAlpha = 0.98;
+      playerTitleAlpha = 0.98;
+      playerScale = 2.36;
       playerTint = 0xfff1d8;
     }
 
@@ -953,11 +959,11 @@ export class MapScene extends Phaser.Scene {
       giftMarkerAlpha = this.festivalGiftOpened ? 0 : 0.66;
       giftHintAlpha = this.festivalGiftOpened ? 0 : 0.9;
       glowAlpha = 0.22;
-      lightAlpha = 0.62;
-      sparkleAlpha = 0.18;
-      hostAlpha = 0.48;
-      crowdAlpha = 0.78;
-      crowdScaleBoost = 0;
+      lightAlpha = 0.8;
+      sparkleAlpha = 0.26;
+      hostAlpha = 0.9;
+      crowdAlpha = 0.98;
+      crowdScaleBoost = 0.04;
       playerSpotlightAlpha = 0;
       playerHaloAlpha = 0.38;
       playerCrownAlpha = 0.92;
@@ -1023,21 +1029,21 @@ export class MapScene extends Phaser.Scene {
     this.refreshReservoirChestState(immediate);
 
     if (mode === "celebrating") {
-      this.startLanternPulse(210, 0.25);
+      this.startLanternPulse(260, 0.18);
       this.startCrowdIdleMotion({
-        amplitude: 4,
-        durationBase: 640,
-        pauseMinMs: 120,
-        pauseMaxMs: 360,
-        scalePulse: 0.03,
+        amplitude: 3.2,
+        durationBase: 760,
+        pauseMinMs: 180,
+        pauseMaxMs: 420,
+        scalePulse: 0.024,
         roamSpreadX: 1,
         roamSpreadY: 1,
-        angleRange: 4,
-        durationJitterMin: -180,
-        durationJitterMax: 220,
+        angleRange: 3,
+        durationJitterMin: -140,
+        durationJitterMax: 180,
       });
       this.startCrowdWaveLoop();
-      this.startPlayerHighlightPulse(true);
+      this.startPlayerHighlightPulse(false);
       this.startFireworkShow();
       return;
     }
@@ -1045,16 +1051,16 @@ export class MapScene extends Phaser.Scene {
     if (mode === "prelude") {
       this.startLanternPulse(280, 0.16);
       this.startCrowdIdleMotion({
-        amplitude: 2.8,
-        durationBase: 760,
-        pauseMinMs: 220,
-        pauseMaxMs: 580,
-        scalePulse: 0.026,
+        amplitude: 2.2,
+        durationBase: 840,
+        pauseMinMs: 260,
+        pauseMaxMs: 620,
+        scalePulse: 0.02,
         roamSpreadX: 1.08,
         roamSpreadY: 1.06,
-        angleRange: 5,
-        durationJitterMin: -210,
-        durationJitterMax: 250,
+        angleRange: 4,
+        durationJitterMin: -180,
+        durationJitterMax: 220,
       });
       this.stopCrowdWaveLoop();
       this.startPlayerHighlightPulse(false);
@@ -1065,18 +1071,18 @@ export class MapScene extends Phaser.Scene {
     if (mode === "settled") {
       this.startLanternPulse(340, 0.1);
       this.startCrowdIdleMotion({
-        amplitude: 1.8,
-        durationBase: 1120,
-        pauseMinMs: 360,
-        pauseMaxMs: 780,
-        scalePulse: 0.018,
-        roamSpreadX: 1.72,
-        roamSpreadY: 1.42,
-        angleRange: 8,
-        durationJitterMin: -320,
-        durationJitterMax: 440,
+        amplitude: 2.4,
+        durationBase: 960,
+        pauseMinMs: 240,
+        pauseMaxMs: 560,
+        scalePulse: 0.022,
+        roamSpreadX: 1.2,
+        roamSpreadY: 1.12,
+        angleRange: 5,
+        durationJitterMin: -200,
+        durationJitterMax: 260,
       });
-      this.stopCrowdWaveLoop();
+      this.startCrowdWaveLoop();
       this.startPlayerHighlightPulse(false);
       this.stopFireworkShow(true);
       return;
@@ -1374,11 +1380,9 @@ export class MapScene extends Phaser.Scene {
 
   private launchCelebrationOpeningFireworks() {
     const openingBursts = [
-      { delay: 0, launchX: 732, peakY: 206, radius: 86, count: 34 },
-      { delay: 140, launchX: 806, peakY: 176, radius: 112, count: 48 },
-      { delay: 300, launchX: 880, peakY: 208, radius: 88, count: 36 },
-      { delay: 460, launchX: 770, peakY: 192, radius: 98, count: 40 },
-      { delay: 620, launchX: 842, peakY: 186, radius: 104, count: 44 },
+      { delay: 0, launchX: 748, peakY: 214, radius: 74, count: 22 },
+      { delay: 220, launchX: 806, peakY: 190, radius: 88, count: 30 },
+      { delay: 440, launchX: 864, peakY: 214, radius: 76, count: 24 },
     ] as const;
 
     openingBursts.forEach((burst, index) => {
@@ -1392,9 +1396,9 @@ export class MapScene extends Phaser.Scene {
             index % 2 === 0
               ? [0xfff4be, 0xffd28a, 0xff8fd4, 0xa8e8ff]
               : [0xfff0b3, 0xffc27a, 0xa7ffa3, 0x98ddff],
-          travelMs: 540,
-          ringBurst: true,
-          doubleBurst: index === 1 || index === 4,
+          travelMs: 560,
+          ringBurst: index === 1,
+          doubleBurst: false,
         });
       });
     });
@@ -1483,21 +1487,21 @@ export class MapScene extends Phaser.Scene {
     this.fireworkShowRunning = true;
     const centerX = 806;
 
-    [120, 640, 1160].forEach((delay, index) => {
+    [180, 860].forEach((delay, index) => {
       this.scheduleFirework(delay, () => {
         this.launchFirework({
           launchX: centerX + Phaser.Math.Between(-140, 140),
-          peakY: 236 - index * 8,
-          particleCount: 24,
-          radius: 72,
+          peakY: 232 - index * 8,
+          particleCount: 18,
+          radius: 64,
           colors: [0xfff0b3, 0xffd27b, 0xff9ec9],
-          travelMs: 560 + index * 40,
+          travelMs: 580 + index * 40,
         });
       });
     });
 
-    for (let index = 0; index < 10; index += 1) {
-      this.scheduleFirework(2050 + index * 460, () => {
+    for (let index = 0; index < 6; index += 1) {
+      this.scheduleFirework(2480 + index * 620, () => {
         const palette =
           index % 2 === 0
             ? [0x98ddff, 0xff88b8, 0xfff2b0, 0xa7ffa3]
@@ -1506,10 +1510,10 @@ export class MapScene extends Phaser.Scene {
         this.launchFirework({
           launchX: centerX + Phaser.Math.Between(-170, 170),
           peakY: Phaser.Math.Between(170, 230),
-          particleCount: 34,
-          radius: 92,
+          particleCount: 24,
+          radius: 78,
           colors: palette,
-          travelMs: Phaser.Math.Between(520, 660),
+          travelMs: Phaser.Math.Between(560, 700),
           ringBurst: index % 3 === 0,
         });
 
@@ -1519,26 +1523,26 @@ export class MapScene extends Phaser.Scene {
       });
     }
 
-    [6800, 7220, 7600].forEach((delay, index) => {
+    [6920, 7580].forEach((delay, index) => {
       this.scheduleFirework(delay, () => {
         this.launchFirework({
           launchX: centerX + (index - 1) * 86,
           peakY: 176 - index * 8,
-          particleCount: index === 2 ? 58 : 46,
-          radius: index === 2 ? 124 : 102,
+          particleCount: 34,
+          radius: 84,
           colors: [0xfff4be, 0xffd28a, 0xff8fd4, 0xa8e8ff],
-          travelMs: 610,
+          travelMs: 640,
           ringBurst: true,
-          doubleBurst: true,
+          doubleBurst: false,
         });
       });
     });
 
-    this.scheduleFirework(7920, () => {
+    this.scheduleFirework(8160, () => {
       this.playCrowdCue("all", true);
     });
 
-    this.scheduleFirework(10100, () => {
+    this.scheduleFirework(9800, () => {
       this.fireworkShowRunning = false;
       if (this.getEffectiveFestivalMode() === "celebrating") {
         this.startFireworkShow();
@@ -1630,17 +1634,17 @@ export class MapScene extends Phaser.Scene {
   private createFireworkBurst(x: number, y: number, config: FireworkLaunchConfig) {
     const flash = this.trackFireworkObject(
       this.add
-        .circle(x, y, 9, 0xfff8db, 0.92)
+        .circle(x, y, 7, 0xffefbd, 0.54)
         .setDepth(15.3)
         .setBlendMode(Phaser.BlendModes.ADD),
     );
 
     this.tweens.add({
       targets: flash,
-      scaleX: 3.4,
-      scaleY: 3.4,
+      scaleX: 2.4,
+      scaleY: 2.4,
       alpha: 0,
-      duration: 260,
+      duration: 220,
       ease: "Quad.easeOut",
       onComplete: () => {
         this.cleanupFireworkObject(flash);
@@ -1740,7 +1744,12 @@ export class MapScene extends Phaser.Scene {
   }
 
   private getPlayerHitbox(nextX: number, nextY: number) {
-    return new Phaser.Geom.Rectangle(nextX - 10, nextY - 16, 20, 14);
+    return new Phaser.Geom.Rectangle(
+      nextX - playerHitboxSize.width / 2,
+      nextY - 16,
+      playerHitboxSize.width,
+      playerHitboxSize.height,
+    );
   }
 
   private isInsideWorldBounds(hitbox: Phaser.Geom.Rectangle) {
@@ -1795,6 +1804,10 @@ export class MapScene extends Phaser.Scene {
     let bestDistance = Number.POSITIVE_INFINITY;
 
     this.entrances.forEach((entrance) => {
+      if (entrance.target !== "festival") {
+        return;
+      }
+
       if (!this.canEnterTarget(entrance.target)) {
         return;
       }
@@ -1806,7 +1819,9 @@ export class MapScene extends Phaser.Scene {
         entrance.centerY,
       );
 
-      if (distance <= maxDistance && distance < bestDistance) {
+      const allowedDistance = Math.min(maxDistance, 72);
+
+      if (distance <= allowedDistance && distance < bestDistance) {
         bestDistance = distance;
         bestTarget = entrance.target;
       }
@@ -1845,15 +1860,20 @@ export class MapScene extends Phaser.Scene {
     entrance.keyHintPlate.setAlpha(0);
     entrance.keyHintText.setAlpha(0);
 
-    if (entrance.target === "festival") {
+    const showFestivalMarker =
+      entrance.target !== "festival" || this.locationStatus.festivalUnlocked;
+
+    if (!showFestivalMarker) {
       entrance.markerDot.setAlpha(0);
       entrance.markerLabel.setAlpha(0);
       return;
     }
 
-    entrance.markerDot.setAlpha(isActive ? 0.92 : 0.56);
+    const idleDotAlpha = entrance.target === "festival" ? 0.42 : 0.56;
+    const idleLabelAlpha = entrance.target === "festival" ? 0.68 : 0.74;
+    entrance.markerDot.setAlpha(isActive ? 0.92 : idleDotAlpha);
     entrance.markerDot.setScale(isActive ? 1.22 : 1);
-    entrance.markerLabel.setAlpha(isActive ? 0.98 : 0.74);
+    entrance.markerLabel.setAlpha(isActive ? 0.98 : idleLabelAlpha);
     entrance.markerLabel.setScale(isActive ? 1.04 : 1);
   }
 
@@ -1878,16 +1898,16 @@ export class MapScene extends Phaser.Scene {
           ? "水库宝箱：已开启"
           : "水库宝箱：待开启"
         : "水库宝箱：未触发";
-      this.progressText.setText(`广场晚会：已完成\n${chestStatus}`);
+      this.progressText.setText(`金币：${this.locationStatus.playerCoins}\n${chestStatus}`);
       return;
     }
 
     if (this.locationStatus.festivalUnlocked) {
-      this.progressText.setText("广场晚会：已解锁");
+      this.progressText.setText(`金币：${this.locationStatus.playerCoins}\n广场晚会：已解锁`);
       return;
     }
 
-    this.progressText.setText("广场晚会：等待市场 + 小岛");
+    this.progressText.setText(`金币：${this.locationStatus.playerCoins}`);
   }
 
   private getEntranceLabel(target: MapTarget) {

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useEventBus } from "../bus/EventBusContext";
 import { setGameInstance } from "./gameRegistry";
-import { createPhaserGame } from "./createPhaserGame";
+import { loadCreatePhaserGame } from "./loadCreatePhaserGame";
 import type { SceneId } from "../store/types";
 
 const PHASER_RENDERER_CANVAS = 1;
@@ -15,6 +15,7 @@ type PhaserHostProps = {
     festivalSeen: boolean;
     fishingChestEligible: boolean;
     reservoirChestOpened: boolean;
+    playerCoins: number;
     timeOfDay: "day" | "night";
     candleLightsOn: boolean;
   };
@@ -39,11 +40,14 @@ export function PhaserHost({ activeScene, mapState }: PhaserHostProps) {
     setLoadState("loading");
 
     const bootGame = () => {
-      void createPhaserGame(container, eventBus, {
-        initialSceneId: activeScene,
-        rendererType,
-        mapState,
-      })
+      void loadCreatePhaserGame()
+        .then((createPhaserGame) =>
+          createPhaserGame(container, eventBus, {
+            initialSceneId: activeScene,
+            rendererType,
+            mapState,
+          }),
+        )
         .then((game) => {
           if (cancelled) {
             game.destroy(true);

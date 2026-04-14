@@ -301,6 +301,24 @@ export function CatanCard({ onComplete, onExit }: CatanCardProps) {
     });
   }, [bus.events, match.activePlayerId, match.phase]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat) {
+        return;
+      }
+
+      if (event.shiftKey && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        finishForManualQa();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   function runIntent(intent: CatanIntent) {
     let nextNote: string | null = null;
     let shouldClearSelection = false;
@@ -321,6 +339,38 @@ export function CatanCard({ onComplete, onExit }: CatanCardProps) {
     if (shouldClearSelection) {
       setSelectedBuildAction(null);
     }
+  }
+
+  function finishForManualQa() {
+    setUiNote(null);
+    setTradeMenuOpen(false);
+    setDevelopmentMenuOpen(false);
+    setSelectedDevelopmentAction(null);
+    setDevelopmentResourceSelection([]);
+    setSelectedTradeSource(null);
+    setTradeGiveResource(null);
+    setSelectedBuildAction(null);
+
+    setMatch((currentState) => {
+      if (currentState.phase === "gameOver" && currentState.winnerId === "player") {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        activePlayerId: "player",
+        phase: "gameOver",
+        winnerId: "player",
+        latestLog: ["手工验证：已快速结束卡坦对局，判定玩家获胜。"],
+        players: {
+          ...currentState.players,
+          player: {
+            ...currentState.players.player,
+            victoryPoints: Math.max(currentState.players.player.victoryPoints, 10),
+          },
+        },
+      };
+    });
   }
 
   const phaseSummary = match.phase === "gameOver"
@@ -720,7 +770,6 @@ export function CatanCard({ onComplete, onExit }: CatanCardProps) {
                   onClick={() => runIntent({ type: "end-turn" })}
                   disabled={!canPlayerAct || (match.phase !== "trade" && match.phase !== "build")}
                 />
-                <TextButton label="返回地图" onClick={onExit} />
               </>
             )}
             </div>
@@ -738,6 +787,10 @@ export function CatanCard({ onComplete, onExit }: CatanCardProps) {
             )}
           </ul>
         </section>
+        <div className="catan-sidebar-footer">
+          <TextButton label="快速胜利并返回地图 (Shift+K)" onClick={finishForManualQa} />
+          <TextButton label="返回地图" onClick={onExit} />
+        </div>
       </div>
     </ScenePanel>
   );

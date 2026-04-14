@@ -55,7 +55,7 @@ export const mapSceneContent = {
   subtitle: "方向键 / WASD 移动，靠近建筑门口后按 E 进入",
   idlePrompt: "去市场和小岛看看吧。",
   festivalLockedPrompt: "广场还在准备中，需要先完成前两个小游戏。",
-  festivalReadyPrompt: "靠近广场入口，按 E 触发生日晚会。",
+  festivalReadyPrompt: "靠近广场入口，按 E 触发生日晚会。想更热闹的话，可以多钓点鱼虾再去晚会吃。",
   festivalCompletedPrompt: "广场晚会彩蛋已完成。",
   festivalCelebratingPrompt: "生日晚会进行中…",
   festivalGiftLocatePrompt: "礼物在广场中央，靠近后按 E 打开。",
@@ -67,7 +67,7 @@ export const mapSceneContent = {
   prompts: {
     shrimp: "靠近市场门口，按 E 进入钓鱼。",
     catan: "靠近小岛入口，按 E 开始卡坦。",
-    festival: "靠近广场入口，按 E 开始晚会。",
+    festival: "靠近广场入口，按 E 开始晚会。多钓点鱼虾再去晚会吃会更热闹。",
   },
   labels: {
     shrimpCompleted: "市场\n已完成",
@@ -117,8 +117,8 @@ export const mapSceneContent = {
 
 export const appShellContent = {
   hud: {
-    title: "Birthday Gift Game",
-    subtitle: "星露谷风格生日小游戏",
+    title: "生日晚会",
+    subtitle: "",
     dynamicTitle: "动态栏",
     dynamicFallback: "去市场和小岛看看吧。",
     specialItemLabel: "特别道具",
@@ -148,13 +148,13 @@ export const appShellContent = {
     goHome: "回到首页",
     goMap: "前往地图",
     openCatan: "打开卡坦对局",
-    openFestival: "打开生日宴会",
+    openFestival: "预览晚会",
     enterMap: "进入地图",
-    previewFestival: "开发预览宴会",
+    previewFestival: "预览晚会",
   },
   overlays: {
     festivalLocked: "广场还在准备中，先去市场和小岛看看吧。",
-    catanCompleted: "小岛上的局势已经被你翻过来了，广场的灯也跟着亮了。",
+    catanCompleted: "小岛上的局势已经被你翻过来了，广场的准备也推进了一步。",
     festivalCompleted: "生日晚会彩蛋已完成，广场重新恢复了平静。",
     festivalGiftOpened: "你打开了礼物，大家的祝福和烟花一起点亮了夜晚。",
     reservoirChestOpened: "水库宝箱打开了，你收到了玉石挂坠一个。",

@@ -122,26 +122,6 @@ h2 {
   padding: 20px;
 }
 
-.status-card--dynamic {
-  gap: 10px;
-  align-content: start;
-}
-
-.status-card--dynamic .story-log {
-  gap: 8px;
-}
-
-.status-card--dynamic .story-log li {
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(255, 249, 224, 0.08);
-}
-
-.map-preview-actions {
-  display: flex;
-  justify-content: flex-start;
-}
-
 .status-card .label {
   display: block;
   margin-bottom: 4px;
@@ -231,11 +211,11 @@ h2 {
 
 .catan-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 332px;
+  grid-template-columns: minmax(0, 1.45fr) 292px;
   gap: 14px;
   align-items: stretch;
   width: 100%;
-  max-width: 1680px;
+  max-width: 1820px;
   margin: 0 auto;
 }
 
@@ -301,7 +281,7 @@ h2 {
 }
 
 .app-shell--catan .catan-workspace__board .scene-panel {
-  width: min(100%, 1280px);
+  width: min(100%, 1420px);
 }
 
 .app-shell--catan .catan-workspace__board .scene-panel__body,
@@ -707,7 +687,7 @@ h2 {
   display: grid;
   gap: 8px;
   min-height: 0;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
 .catan-build-columns {
@@ -866,6 +846,17 @@ h2 {
   min-height: 0;
   grid-template-rows: auto 1fr;
   padding: 8px 10px;
+}
+
+.catan-sidebar-footer {
+  display: grid;
+  gap: 8px;
+  padding: 4px 2px 0;
+}
+
+.catan-sidebar-footer .text-button {
+  width: 100%;
+  justify-self: stretch;
 }
 
 .catan-action-column {
