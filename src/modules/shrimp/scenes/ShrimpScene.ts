@@ -25,6 +25,7 @@ type FishingRuntimeTuning = {
 const fishingDebugEnabled =
   import.meta.env.DEV &&
   new URLSearchParams(window.location.search).get("debugFishing") === "1";
+const fishingQaShortcutEnabled = import.meta.env.DEV;
 
 export class ShrimpScene extends Phaser.Scene {
   private readonly bus: EventBus;
@@ -326,7 +327,9 @@ export class ShrimpScene extends Phaser.Scene {
     }
     this.input.keyboard?.on("keydown-SPACE", this.handleCatch, this);
     this.input.keyboard?.on("keydown-ESC", this.handleExit, this);
-    this.input.keyboard?.on("keydown-J", this.handleQaFinishSession, this);
+    if (fishingQaShortcutEnabled) {
+      this.input.keyboard?.on("keydown-J", this.handleQaFinishSession, this);
+    }
     this.inputBound = true;
   }
 
@@ -336,7 +339,9 @@ export class ShrimpScene extends Phaser.Scene {
     }
     this.input.keyboard?.off("keydown-SPACE", this.handleCatch, this);
     this.input.keyboard?.off("keydown-ESC", this.handleExit, this);
-    this.input.keyboard?.off("keydown-J", this.handleQaFinishSession, this);
+    if (fishingQaShortcutEnabled) {
+      this.input.keyboard?.off("keydown-J", this.handleQaFinishSession, this);
+    }
     this.inputBound = false;
   }
 

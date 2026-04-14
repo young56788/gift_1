@@ -71,6 +71,7 @@ function sortNodesByValue(state: CatanMatchState, nodeIds: number[]) {
 }
 
 export function CatanCard({ onComplete, onExit }: CatanCardProps) {
+  const manualQaEnabled = import.meta.env.DEV;
   const bus = useEventBus();
   const [match, setMatch] = useState(() => createInitialCatanState());
   const [uiNote, setUiNote] = useState<string | null>(null);
@@ -302,6 +303,10 @@ export function CatanCard({ onComplete, onExit }: CatanCardProps) {
   }, [bus.events, match.activePlayerId, match.phase]);
 
   useEffect(() => {
+    if (!manualQaEnabled) {
+      return;
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.repeat) {
         return;
@@ -317,7 +322,7 @@ export function CatanCard({ onComplete, onExit }: CatanCardProps) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [manualQaEnabled]);
 
   function runIntent(intent: CatanIntent) {
     let nextNote: string | null = null;
@@ -361,7 +366,7 @@ export function CatanCard({ onComplete, onExit }: CatanCardProps) {
         activePlayerId: "player",
         phase: "gameOver",
         winnerId: "player",
-        latestLog: ["手工验证：已快速结束卡坦对局，判定玩家获胜。"],
+        latestLog: ["已快速结束对局，当前判定玩家获胜。"],
         players: {
           ...currentState.players,
           player: {
@@ -788,7 +793,9 @@ export function CatanCard({ onComplete, onExit }: CatanCardProps) {
           </ul>
         </section>
         <div className="catan-sidebar-footer">
-          <TextButton label="快速胜利并返回地图 (Shift+K)" onClick={finishForManualQa} />
+          {manualQaEnabled ? (
+            <TextButton label="快速胜利并返回地图 (Shift+K)" onClick={finishForManualQa} />
+          ) : null}
           <TextButton label="返回地图" onClick={onExit} />
         </div>
       </div>

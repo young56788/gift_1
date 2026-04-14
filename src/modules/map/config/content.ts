@@ -148,9 +148,7 @@ export const appShellContent = {
     goHome: "回到首页",
     goMap: "前往地图",
     openCatan: "打开卡坦对局",
-    openFestival: "预览晚会",
     enterMap: "进入地图",
-    previewFestival: "预览晚会",
   },
   overlays: {
     festivalLocked: "广场还在准备中，先去市场和小岛看看吧。",
