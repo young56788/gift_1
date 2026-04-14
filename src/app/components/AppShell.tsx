@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { useEventBus } from "../../bus/EventBusContext";
 import { PhaserHost } from "../../phaser/PhaserHost";
 import { useGameStore } from "../../store/gameStore";
@@ -7,8 +7,13 @@ import { TextButton } from "../../ui/TextButton";
 import { FestivalMapOverlay } from "../../modules/festival/components/FestivalMapOverlay";
 import { appShellContent, mapSceneContent } from "../../modules/map/config/content";
 import { shrimpSceneContent } from "../../modules/shrimp/config/content";
-import { CatanCard } from "../../modules/catan/components/CatanCard";
 import type { FestivalCelebrationStep } from "../../modules/map/config/content";
+
+const CatanCard = lazy(() =>
+  import("../../modules/catan/components/CatanCard").then((module) => ({
+    default: module.CatanCard,
+  })),
+);
 
 type SystemErrorPayload = {
   source: string;
@@ -69,7 +74,6 @@ function useBusBridge(
         setCurrentScene("map");
         setOverlayMessage(null);
         setFestivalSequenceActive(true);
-        bus.commands.emit("map/festival-mode", { mode: "celebrating" });
         return;
       }
 
@@ -82,27 +86,6 @@ function useBusBridge(
     bus.commands,
     bus.events,
     mapSceneContent.festivalCompletedPrompt,
-    progress.festivalSeen,
-    progress.festivalUnlocked,
-    setCurrentScene,
-    setFestivalSequenceActive,
-    setOverlayMessage,
-  ]);
-
-  useEffect(() => {
-    return bus.events.subscribe("map/festival-easter-egg-request", () => {
-      if (!progress.festivalUnlocked || progress.festivalSeen) {
-        return;
-      }
-
-      setCurrentScene("map");
-      setOverlayMessage(null);
-      setFestivalSequenceActive(true);
-      bus.commands.emit("map/festival-mode", { mode: "celebrating" });
-    });
-  }, [
-    bus.commands,
-    bus.events,
     progress.festivalSeen,
     progress.festivalUnlocked,
     setCurrentScene,
@@ -176,11 +159,13 @@ function useBusBridge(
       festivalSeen: progress.festivalSeen,
       fishingChestEligible: progress.fishingChestEligible,
       reservoirChestOpened: progress.reservoirChestOpened,
+      playerCoins,
       timeOfDay: mapTimeOfDay,
       candleLightsOn: mapCandleLightsOn,
     });
   }, [
     bus.commands,
+    playerCoins,
     mapCandleLightsOn,
     mapTimeOfDay,
     progress.catanCompleted,
@@ -290,9 +275,22 @@ export function AppShell() {
       : null;
   const isCatanScene = ui.currentScene === "catan";
   const isMapScene = ui.currentScene === "map";
-  const showDevPreviewActions = import.meta.env.DEV;
   const showPhaserDebug =
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("debugPhaser") === "1";
+
+  const pushImmediateMapState = (festivalSeen: boolean) => {
+    bus.commands.emit("map/show-state", {
+      shrimpCompleted: progress.shrimpCompleted,
+      catanCompleted: progress.catanCompleted,
+      festivalUnlocked: progress.festivalUnlocked,
+      festivalSeen,
+      fishingChestEligible: progress.fishingChestEligible,
+      reservoirChestOpened: progress.reservoirChestOpened,
+      playerCoins: player.coins,
+      timeOfDay: ui.mapTimeOfDay,
+      candleLightsOn: ui.mapCandleLightsOn,
+    });
+  };
 
   useEffect(() => {
     if (!showPhaserDebug) {
@@ -310,7 +308,14 @@ export function AppShell() {
       return;
     }
 
-    bus.commands.emit("map/festival-mode", { mode: "celebrating" });
+    bus.commands.emit("map/festival-mode", { mode: "prelude" });
+    const timer = window.setTimeout(() => {
+      bus.commands.emit("map/festival-mode", { mode: "celebrating" });
+    }, 180);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [bus.commands, isMapScene, ui.festivalSequenceActive]);
 
   useEffect(() => {
@@ -346,20 +351,17 @@ export function AppShell() {
     setCatanRuntimeError(null);
   }, [ui.currentScene]);
 
-  const mapDynamicItems = useMemo(
-    () => [`${appShellContent.hud.coinsLabel}：${player.coins}`],
-    [player.coins],
-  );
-
   const finishFestivalSequence = () => {
     if (!ui.festivalSequenceActive) {
       return;
     }
 
-    markFestivalSeen();
-    setFestivalSequenceActive(false);
-    setOverlayMessage(appShellContent.overlays.festivalCompleted);
     bus.commands.emit("map/festival-mode", { mode: "settled" });
+    bus.commands.emit("map/festival-crowd-cue", { cue: "all" });
+    setFestivalSequenceActive(false);
+    markFestivalSeen();
+    pushImmediateMapState(true);
+    setOverlayMessage(appShellContent.overlays.festivalCompleted);
   };
 
   const skipFestivalSequence = () => {
@@ -367,10 +369,12 @@ export function AppShell() {
       return;
     }
 
+    bus.commands.emit("map/festival-mode", { mode: "settled" });
+    bus.commands.emit("map/festival-crowd-cue", { cue: "all" });
     setFestivalSequenceActive(false);
     markFestivalSeen();
+    pushImmediateMapState(true);
     setOverlayMessage(appShellContent.overlays.festivalCompleted);
-    bus.commands.emit("map/festival-mode", { mode: "settled" });
   };
 
   const handleFestivalStepChange = (step: FestivalCelebrationStep) => {
@@ -381,13 +385,6 @@ export function AppShell() {
     bus.commands.emit("map/festival-crowd-cue", {
       cue: step.crowdCue,
     });
-  };
-
-  const previewFestivalScene = () => {
-    setCurrentScene("map");
-    setOverlayMessage("已进入晚会场景预览。");
-    setFestivalSequenceActive(true);
-    bus.commands.emit("map/festival-mode", { mode: "celebrating" });
   };
 
   const retryCatanHost = () => {
@@ -404,6 +401,15 @@ export function AppShell() {
     setCurrentScene("map");
   };
 
+  const completeCatanToMap = () => {
+    markCatanCompleted();
+    setFestivalSequenceActive(false);
+    bus.commands.emit("map/festival-mode", { mode: "idle" });
+    setMapRuntimeError(null);
+    setCurrentScene("map");
+    setOverlayMessage(appShellContent.overlays.catanCompleted);
+  };
+
   const retryMapHost = () => {
     setOverlayMessage(null);
     setMapRuntimeError(null);
@@ -412,30 +418,6 @@ export function AppShell() {
 
   return (
     <div className={`app-shell${isCatanScene ? " app-shell--catan" : ""}`}>
-      {!isCatanScene ? (
-        <div className={`app-shell__hud${isMapScene ? " app-shell__hud--with-dynamic" : ""}`}>
-          <div>
-            <h1>{appShellContent.hud.title}</h1>
-            {appShellContent.hud.subtitle ? <p className="lede">{appShellContent.hud.subtitle}</p> : null}
-          </div>
-          {isMapScene ? (
-            <div className="status-card status-card--dynamic">
-              <div className="panel-heading">
-                <h3>{appShellContent.hud.dynamicTitle}</h3>
-              </div>
-              <ul className="story-log">
-                {mapDynamicItems.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-              <div className="map-preview-actions">
-                <TextButton label="预览晚会场景" onClick={previewFestivalScene} />
-              </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
       <div className="app-shell__body">
         <div className="play-column">
           {showPhaserDebug ? (
@@ -490,6 +472,7 @@ export function AppShell() {
                         festivalSeen: progress.festivalSeen,
                         fishingChestEligible: progress.fishingChestEligible,
                         reservoirChestOpened: progress.reservoirChestOpened,
+                        playerCoins: player.coins,
                         timeOfDay: ui.mapTimeOfDay,
                         candleLightsOn: ui.mapCandleLightsOn,
                       }}
@@ -547,13 +530,18 @@ export function AppShell() {
             </div>
             {isCatanScene ? (
               <div className="catan-workspace__sidebar">
-                <CatanCard
-                  onComplete={() => {
-                    markCatanCompleted();
-                    setOverlayMessage(appShellContent.overlays.catanCompleted);
-                  }}
-                  onExit={exitCatanToMap}
-                />
+                <Suspense
+                  fallback={(
+                    <ScenePanel title="卡坦规则层" subtitle="正在按需加载">
+                      <p className="story-copy">正在载入卡坦规则面板…</p>
+                    </ScenePanel>
+                  )}
+                >
+                  <CatanCard
+                    onComplete={completeCatanToMap}
+                    onExit={exitCatanToMap}
+                  />
+                </Suspense>
               </div>
             ) : null}
           </div>
@@ -574,17 +562,6 @@ export function AppShell() {
                     setOverlayMessage(null);
                   }}
                 />
-                {showDevPreviewActions ? (
-                  <TextButton
-                    label={appShellContent.actions.previewFestival}
-                    onClick={() => {
-                      setCurrentScene("map");
-                      setOverlayMessage(null);
-                      setFestivalSequenceActive(true);
-                      bus.commands.emit("map/festival-mode", { mode: "celebrating" });
-                    }}
-                  />
-                ) : null}
               </div>
             </ScenePanel>
           ) : null}

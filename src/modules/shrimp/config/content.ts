@@ -52,7 +52,7 @@ export const shrimpSceneTuning = {
     max: 140,
   },
   sessionCastCount: 8,
-  requiredPrawnTotalForReward: 8,
+  requiredPrawnTotalForReward: 6,
   resolveRevealDelayMs: 360,
   roundTimeLimitBaseMs: 2300,
   roundTimeLimitMinMs: 1180,

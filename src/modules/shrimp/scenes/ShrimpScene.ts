@@ -326,6 +326,7 @@ export class ShrimpScene extends Phaser.Scene {
     }
     this.input.keyboard?.on("keydown-SPACE", this.handleCatch, this);
     this.input.keyboard?.on("keydown-ESC", this.handleExit, this);
+    this.input.keyboard?.on("keydown-J", this.handleQaFinishSession, this);
     this.inputBound = true;
   }
 
@@ -335,6 +336,7 @@ export class ShrimpScene extends Phaser.Scene {
     }
     this.input.keyboard?.off("keydown-SPACE", this.handleCatch, this);
     this.input.keyboard?.off("keydown-ESC", this.handleExit, this);
+    this.input.keyboard?.off("keydown-J", this.handleQaFinishSession, this);
     this.inputBound = false;
   }
 
@@ -639,6 +641,40 @@ export class ShrimpScene extends Phaser.Scene {
       this.bus.events.emit("shrimp/exit", {
         completed: false,
       });
+    });
+  }
+
+  private handleQaFinishSession(event: KeyboardEvent) {
+    this.runSafely("shrimp/qa-fast-finish", () => {
+      if (
+        !event.shiftKey ||
+        this.sessionLocked ||
+        this.sessionOutcomeEmitted ||
+        !this.infoText ||
+        !this.resultText
+      ) {
+        return;
+      }
+
+      const remainingPrawns = Math.max(
+        0,
+        shrimpSceneTuning.requiredPrawnTotalForReward - (this.playerPrawnTotal + this.prawnCount),
+      );
+
+      if (remainingPrawns > 0) {
+        this.prawnCount += remainingPrawns;
+        this.totalCatchCount += remainingPrawns;
+        this.goodCount += remainingPrawns;
+        this.catchBreakdown.prawn += remainingPrawns;
+        this.score = Math.max(this.score, shrimpSceneTuning.gradeThresholds.b);
+      }
+
+      this.roundReady = false;
+      this.castCount = shrimpSceneTuning.sessionCastCount;
+      this.clearRoundResetTimer();
+      this.roundTimeLeftMs = 0;
+      this.updateSessionText();
+      this.finishSession();
     });
   }
 

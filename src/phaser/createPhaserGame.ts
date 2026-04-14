@@ -3,7 +3,7 @@ import type { CatanBoardSnapshot } from "../modules/catan/types";
 import type { CatanMatchSnapshot } from "../modules/catan/engineTypes";
 import type { SceneId } from "../store/types";
 import { setGameInstance } from "./gameRegistry";
-import { loadPhaserRuntime } from "./loadPhaserRuntime";
+import { loadPhaserRuntime, loadPhaserScene } from "./loadPhaserRuntime";
 import { sceneKeyBySceneId } from "./sceneKeys";
 
 type PhaserBootState = {
@@ -16,6 +16,7 @@ type PhaserBootState = {
     festivalSeen: boolean;
     fishingChestEligible: boolean;
     reservoirChestOpened: boolean;
+    playerCoins: number;
     timeOfDay: "day" | "night";
     candleLightsOn: boolean;
   };
@@ -124,29 +125,12 @@ export async function createPhaserGame(
     }
 
     const loadPromise = (async () => {
-      if (sceneId === "map") {
-        if (destroyed || getManagedScene("map")) {
-          return;
-        }
-
-        game.scene.add(sceneKeyBySceneId.map, new runtime.MapScene(eventBus), false);
+      const SceneConstructor = await loadPhaserScene(sceneId);
+      if (destroyed || getManagedScene(sceneId)) {
         return;
       }
 
-      if (sceneId === "shrimp") {
-        if (destroyed || getManagedScene("shrimp")) {
-          return;
-        }
-
-        game.scene.add(sceneKeyBySceneId.shrimp, new runtime.ShrimpScene(eventBus), false);
-        return;
-      }
-
-      if (destroyed || getManagedScene("catan")) {
-        return;
-      }
-
-      game.scene.add(sceneKeyBySceneId.catan, new runtime.CatanGameScene(eventBus), false);
+      game.scene.add(sceneKeyBySceneId[sceneId], new SceneConstructor(eventBus), false);
       emitDebugState(`scene-added:${sceneId}`);
     })().finally(() => {
       sceneLoadPromises.delete(sceneId);
