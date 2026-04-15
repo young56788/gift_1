@@ -17,6 +17,7 @@ type MapProgressState = {
   festivalUnlocked: boolean;
   festivalSeen: boolean;
   fishingChestEligible: boolean;
+  reservoirChestUnlocked: boolean;
   reservoirChestOpened: boolean;
   playerCoins: number;
 };
@@ -149,6 +150,7 @@ export class MapScene extends Phaser.Scene {
     festivalUnlocked: false,
     festivalSeen: false,
     fishingChestEligible: false,
+    reservoirChestUnlocked: false,
     reservoirChestOpened: false,
     playerCoins: 0,
   };
@@ -861,6 +863,8 @@ export class MapScene extends Phaser.Scene {
         ...this.locationStatus,
         festivalSeen: true,
         festivalUnlocked: true,
+        reservoirChestUnlocked:
+          this.locationStatus.reservoirChestUnlocked || this.locationStatus.fishingChestEligible,
       };
       this.refreshEntranceDecor();
     }
@@ -1264,7 +1268,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   private canShowReservoirChest() {
-    return this.locationStatus.festivalSeen && this.locationStatus.fishingChestEligible;
+    return this.locationStatus.festivalSeen && this.locationStatus.reservoirChestUnlocked;
   }
 
   private refreshReservoirChestState(immediate: boolean) {
@@ -1893,7 +1897,7 @@ export class MapScene extends Phaser.Scene {
     }
 
     if (this.locationStatus.festivalSeen) {
-      const chestStatus = this.locationStatus.fishingChestEligible
+      const chestStatus = this.locationStatus.reservoirChestUnlocked
         ? this.locationStatus.reservoirChestOpened
           ? "水库宝箱：已开启"
           : "水库宝箱：待开启"

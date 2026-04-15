@@ -14,6 +14,7 @@ export type ProgressState = {
   festivalUnlocked: boolean;
   festivalSeen: boolean;
   fishingChestEligible: boolean;
+  reservoirChestUnlocked: boolean;
   reservoirChestOpened: boolean;
 };
 

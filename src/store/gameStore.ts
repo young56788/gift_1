@@ -43,6 +43,7 @@ const initialState: GameState = {
     festivalUnlocked: false,
     festivalSeen: false,
     fishingChestEligible: false,
+    reservoirChestUnlocked: false,
     reservoirChestOpened: false,
   },
   ui: {
@@ -148,6 +149,8 @@ export const useGameStore = create<GameStore>((set) => ({
       progress: {
         ...state.progress,
         festivalSeen: true,
+        reservoirChestUnlocked:
+          state.progress.reservoirChestUnlocked || state.progress.fishingChestEligible,
       },
     })),
 }));

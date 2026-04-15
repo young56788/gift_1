@@ -255,11 +255,11 @@ function getMomentumPhase(state: CatanMatchState) {
   const roundNumber = Math.max(Math.ceil(state.turnNumber / state.turnOrder.length), 1);
   const playerPoints = state.players.player.victoryPoints;
 
-  if (playerPoints >= 8 || roundNumber >= 7) {
+  if (playerPoints >= 8 || roundNumber >= 8) {
     return "comeback" as const;
   }
 
-  if (roundNumber <= 3) {
+  if (roundNumber <= 4) {
     return "pressure" as const;
   }
 
@@ -321,14 +321,14 @@ function chooseBiasedDicePair(state: CatanMatchState): [number, number] {
     const comebackBias = entry.playerScore - entry.opponentScore;
     const phaseMultiplier =
       momentumPhase === "pressure"
-        ? 1 + pressureBias * 0.22
+        ? 1 + pressureBias * 0.32
         : momentumPhase === "release"
-          ? 1 + comebackBias * 0.08
+          ? 1 + comebackBias * 0.1
           : 1 + comebackBias * 0.26;
     const robberBoost =
       entry.total === 7
         ? momentumPhase === "pressure"
-          ? 1.15
+          ? 1.28
           : momentumPhase === "comeback"
             ? 0.82
             : 1

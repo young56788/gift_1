@@ -11,6 +11,7 @@ export type PhaserCommandMap = {
     festivalUnlocked: boolean;
     festivalSeen: boolean;
     fishingChestEligible: boolean;
+    reservoirChestUnlocked: boolean;
     reservoirChestOpened: boolean;
     playerCoins: number;
     timeOfDay: "day" | "night";

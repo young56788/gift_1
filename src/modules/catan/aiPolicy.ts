@@ -43,14 +43,16 @@ export function chooseBaselineAiIntent(
 
   if (state.phase === "setup-settlement") {
     const nodeId = [...getAvailableSetupSettlementNodes(state)].sort((left, right) => {
-      return getNodeProductionWeight(state.graph, right) - getNodeProductionWeight(state.graph, left);
+      return getSetupSettlementPriorityScore(state, playerId, right) - getSetupSettlementPriorityScore(state, playerId, left);
     })[0];
 
     return nodeId !== undefined ? { type: "build-settlement", nodeId } : null;
   }
 
   if (state.phase === "setup-road") {
-    const edgeId = getAvailableSetupRoadEdges(state, playerId)[0];
+    const edgeId = [...getAvailableSetupRoadEdges(state, playerId)].sort((left, right) => {
+      return getSetupRoadPriorityScore(state, playerId, right) - getSetupRoadPriorityScore(state, playerId, left);
+    })[0];
     return edgeId !== undefined ? { type: "build-road", edgeId } : null;
   }
 
@@ -130,6 +132,113 @@ function canAfford(resources: CatanResourceState, cost: Partial<CatanResourceSta
   return Object.entries(cost).every(([resource, count]) => {
     return resources[resource as keyof CatanResourceState] >= (count ?? 0);
   });
+}
+
+function getMinimumNodeDistanceToPlayer(state: CatanMatchState, nodeId: number) {
+  const playerNodes = Object.entries(state.occupiedNodes)
+    .filter(([, occupancy]) => occupancy?.owner === "player")
+    .map(([occupiedNodeId]) => Number(occupiedNodeId));
+
+  if (playerNodes.length === 0) {
+    return Infinity;
+  }
+
+  const visited = new Set<number>([nodeId]);
+  const queue: Array<{ nodeId: number; distance: number }> = [{ nodeId, distance: 0 }];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+
+    if (!current) {
+      break;
+    }
+
+    if (playerNodes.includes(current.nodeId)) {
+      return current.distance;
+    }
+
+    for (const adjacentNodeId of state.graph.nodes[current.nodeId]?.adjacentNodeIds ?? []) {
+      if (visited.has(adjacentNodeId)) {
+        continue;
+      }
+
+      visited.add(adjacentNodeId);
+      queue.push({ nodeId: adjacentNodeId, distance: current.distance + 1 });
+    }
+  }
+
+  return Infinity;
+}
+
+function getSetupPressureScore(state: CatanMatchState, nodeId: number) {
+  const node = state.graph.nodes[nodeId];
+
+  if (!node) {
+    return -Infinity;
+  }
+
+  const playerRoadAdjacency = node.adjacentEdgeIds.reduce((count, edgeId) => {
+    return count + (state.occupiedEdges[edgeId] === "player" ? 1 : 0);
+  }, 0);
+  const contestedTiles = node.adjacentTileIds.reduce((count, tileId) => {
+    const tile = state.graph.tiles[tileId];
+
+    if (!tile) {
+      return count;
+    }
+
+    const touchesPlayerNode = tile.nodeIds.some((candidateNodeId) => {
+      return state.occupiedNodes[candidateNodeId]?.owner === "player";
+    });
+
+    return count + (touchesPlayerNode ? 1 : 0);
+  }, 0);
+  const distanceToPlayer = getMinimumNodeDistanceToPlayer(state, nodeId);
+  const proximityScore =
+    distanceToPlayer === 2 ? 8 : distanceToPlayer === 3 ? 5 : distanceToPlayer === 4 ? 2.5 : 0;
+
+  return playerRoadAdjacency * 7 + contestedTiles * 4.4 + proximityScore;
+}
+
+function getSetupSettlementPriorityScore(
+  state: CatanMatchState,
+  playerId: CatanPlayerId,
+  nodeId: number,
+) {
+  const production = getNodeProductionWeight(state.graph, nodeId);
+
+  if (playerId === "player") {
+    return production;
+  }
+
+  const setupFollowUp = state.graph.nodes[nodeId]?.adjacentEdgeIds.reduce((score, edgeId) => {
+    return score + getRoadPriorityScore(state, playerId, edgeId) * 0.22;
+  }, 0) ?? 0;
+
+  return production + getSetupPressureScore(state, nodeId) * 1.8 + setupFollowUp;
+}
+
+function getSetupRoadPriorityScore(
+  state: CatanMatchState,
+  playerId: CatanPlayerId,
+  edgeId: number,
+) {
+  const edge = state.graph.edges[edgeId];
+  const pendingNodeId = state.setup.pendingRoadNodeId;
+
+  if (!edge || pendingNodeId === null) {
+    return -Infinity;
+  }
+
+  const expansionNodeId = edge.nodeIds.find((nodeId) => nodeId !== pendingNodeId) ?? pendingNodeId;
+  const expansionNodeValue =
+    getNodeProductionWeight(state.graph, expansionNodeId) + getSetupPressureScore(state, expansionNodeId) * 1.6;
+
+  if (playerId === "player") {
+    return expansionNodeValue;
+  }
+
+  return expansionNodeValue + getRoadPriorityScore(state, playerId, edgeId) * 0.9;
 }
 
 function getRoadPriorityScore(state: CatanMatchState, playerId: CatanPlayerId, edgeId: number) {

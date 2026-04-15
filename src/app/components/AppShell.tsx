@@ -158,6 +158,7 @@ function useBusBridge(
       festivalUnlocked: progress.festivalUnlocked,
       festivalSeen: progress.festivalSeen,
       fishingChestEligible: progress.fishingChestEligible,
+      reservoirChestUnlocked: progress.reservoirChestUnlocked,
       reservoirChestOpened: progress.reservoirChestOpened,
       playerCoins,
       timeOfDay: mapTimeOfDay,
@@ -172,6 +173,7 @@ function useBusBridge(
     progress.fishingChestEligible,
     progress.festivalSeen,
     progress.festivalUnlocked,
+    progress.reservoirChestUnlocked,
     progress.reservoirChestOpened,
     progress.shrimpCompleted,
   ]);
@@ -279,12 +281,16 @@ export function AppShell() {
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("debugPhaser") === "1";
 
   const pushImmediateMapState = (festivalSeen: boolean) => {
+    const reservoirChestUnlocked =
+      progress.reservoirChestUnlocked || (festivalSeen && progress.fishingChestEligible);
+
     bus.commands.emit("map/show-state", {
       shrimpCompleted: progress.shrimpCompleted,
       catanCompleted: progress.catanCompleted,
       festivalUnlocked: progress.festivalUnlocked,
       festivalSeen,
       fishingChestEligible: progress.fishingChestEligible,
+      reservoirChestUnlocked,
       reservoirChestOpened: progress.reservoirChestOpened,
       playerCoins: player.coins,
       timeOfDay: ui.mapTimeOfDay,
@@ -471,6 +477,7 @@ export function AppShell() {
                         festivalUnlocked: progress.festivalUnlocked,
                         festivalSeen: progress.festivalSeen,
                         fishingChestEligible: progress.fishingChestEligible,
+                        reservoirChestUnlocked: progress.reservoirChestUnlocked,
                         reservoirChestOpened: progress.reservoirChestOpened,
                         playerCoins: player.coins,
                         timeOfDay: ui.mapTimeOfDay,
