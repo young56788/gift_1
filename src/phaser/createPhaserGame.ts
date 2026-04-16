@@ -300,6 +300,13 @@ export async function createPhaserGame(
   }
 
   function requestSceneLoad(sceneId: LoadableSceneId) {
+    if (desiredActiveScene === sceneId) {
+      const existingScene = getManagedScene(sceneId);
+      if (gameReady && existingScene && existingScene.scene.isActive() && existingScene.scene.isVisible()) {
+        return;
+      }
+    }
+
     desiredActiveScene = sceneId;
     if (!gameReady) {
       queueSceneLoad(sceneId);
@@ -316,6 +323,15 @@ export async function createPhaserGame(
     }
     if (!gameReady) {
       queueSceneUnload(sceneId);
+      return;
+    }
+
+    const existingScene = getManagedScene(sceneId);
+    if (
+      existingScene &&
+      !existingScene.scene.isVisible() &&
+      (existingScene.scene.isSleeping() || !existingScene.scene.isActive())
+    ) {
       return;
     }
 

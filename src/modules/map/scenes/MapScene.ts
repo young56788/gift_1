@@ -182,6 +182,7 @@ export class MapScene extends Phaser.Scene {
   private crowdWalkTimers: Phaser.Time.TimerEvent[] = [];
   private crowdWaveTimer?: Phaser.Time.TimerEvent;
   private playerHighlightTweens: Phaser.Tweens.Tween[] = [];
+  private lastCrowdCueAt = 0;
 
   private fireworkShowRunning = false;
   private fireworkTimers: Phaser.Time.TimerEvent[] = [];
@@ -1197,6 +1198,10 @@ export class MapScene extends Phaser.Scene {
     });
   }
 
+  private removeCrowdIdleTween(tween: Phaser.Tweens.Tween) {
+    this.crowdIdleTweens = this.crowdIdleTweens.filter((item) => item !== tween);
+  }
+
   private scheduleCrowdWander(crowdNpc: CrowdNpc, config: CrowdMotionConfig, index: number) {
     const walkOnce = () => {
       if (crowdNpc.sprite.alpha < 0.15) {
@@ -1231,23 +1236,27 @@ export class MapScene extends Phaser.Scene {
       );
       const targetAngle = Phaser.Math.Between(-config.angleRange, config.angleRange);
 
-      this.crowdIdleTweens.push(
-        this.tweens.add({
-          targets: crowdNpc.sprite,
-          x: targetX,
-          y: targetY,
-          angle: targetAngle,
-          duration: travelDuration,
-          ease: "Sine.easeInOut",
-          onComplete: () => {
-            const pauseTimer = this.time.delayedCall(
-              Phaser.Math.Between(config.pauseMinMs, config.pauseMaxMs),
-              walkOnce,
-            );
-            this.crowdWalkTimers.push(pauseTimer);
-          },
-        }),
-      );
+      const tween = this.tweens.add({
+        targets: crowdNpc.sprite,
+        x: targetX,
+        y: targetY,
+        angle: targetAngle,
+        duration: travelDuration,
+        ease: "Sine.easeInOut",
+        onComplete: () => {
+          this.removeCrowdIdleTween(tween);
+          const pauseTimer = this.time.delayedCall(
+            Phaser.Math.Between(config.pauseMinMs, config.pauseMaxMs),
+            walkOnce,
+          );
+          this.crowdWalkTimers.push(pauseTimer);
+        },
+        onStop: () => {
+          this.removeCrowdIdleTween(tween);
+        },
+      });
+
+      this.crowdIdleTweens.push(tween);
     };
 
     walkOnce();
@@ -1438,6 +1447,12 @@ export class MapScene extends Phaser.Scene {
     if (mode === "idle") {
       return;
     }
+
+    const now = this.time.now;
+    if (!strong && now - this.lastCrowdCueAt < 260) {
+      return;
+    }
+    this.lastCrowdCueAt = now;
 
     const targets =
       cue === "all"
@@ -2072,6 +2087,10 @@ export class MapScene extends Phaser.Scene {
       return;
     }
 
+    if (!immediate && Math.abs(target.alpha - alpha) < 0.02 && !this.tweens.isTweening(target)) {
+      return;
+    }
+
     this.tweens.killTweensOf(target);
 
     if (immediate) {
@@ -2100,6 +2119,15 @@ export class MapScene extends Phaser.Scene {
     duration: number,
   ) {
     if (!target) {
+      return;
+    }
+
+    if (
+      !immediate &&
+      Math.abs(target.scaleX - scale) < 0.02 &&
+      Math.abs(target.scaleY - scale) < 0.02 &&
+      !this.tweens.isTweening(target)
+    ) {
       return;
     }
 

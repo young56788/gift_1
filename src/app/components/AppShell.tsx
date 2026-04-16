@@ -1,7 +1,8 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { useEventBus } from "../../bus/EventBusContext";
 import { PhaserHost } from "../../phaser/PhaserHost";
 import { useGameStore } from "../../store/gameStore";
+import type { SceneId } from "../../store/types";
 import { ScenePanel } from "../../ui/ScenePanel";
 import { TextButton } from "../../ui/TextButton";
 import { FestivalMapOverlay } from "../../modules/festival/components/FestivalMapOverlay";
@@ -52,6 +53,7 @@ function useBusBridge(
   onSystemError?: (payload: SystemErrorPayload) => void,
 ) {
   const bus = useEventBus();
+  const appliedSceneRef = useRef<SceneId | null>(null);
   const currentScene = useGameStore((state) => state.ui.currentScene);
   const mapTimeOfDay = useGameStore((state) => state.ui.mapTimeOfDay);
   const mapCandleLightsOn = useGameStore((state) => state.ui.mapCandleLightsOn);
@@ -179,6 +181,12 @@ function useBusBridge(
   ]);
 
   useEffect(() => {
+    if (appliedSceneRef.current === currentScene) {
+      return;
+    }
+
+    appliedSceneRef.current = currentScene;
+
     if (currentScene === "map") {
       bus.commands.emit("scene/load", { sceneId: "map" });
       bus.commands.emit("scene/unload", { sceneId: "shrimp" });
@@ -210,7 +218,7 @@ function useBusBridge(
       bus.commands.emit("scene/unload", { sceneId: "shrimp" });
       bus.commands.emit("scene/unload", { sceneId: "catan" });
     }
-  }, [bus.commands, currentScene, playerCoins, playerPrawnTotal, progress.shrimpSessionsPlayed]);
+  }, [bus.commands, currentScene]);
 }
 
 export function AppShell() {

@@ -398,6 +398,7 @@ export class ShrimpScene extends Phaser.Scene {
     this.clearRoundResetTimer();
     this.clearMapReturnGuardTimer();
     this.unbindInput();
+    this.ambientTweens.forEach((tween) => tween.pause());
     if (this.tuningPaneHost) {
       this.tuningPaneHost.style.display = "none";
     }
@@ -408,6 +409,7 @@ export class ShrimpScene extends Phaser.Scene {
       if (this.tuningPaneHost) {
         this.tuningPaneHost.style.display = "block";
       }
+      this.ambientTweens.forEach((tween) => tween.resume());
       this.resetSessionState();
       this.bindInput();
     });

@@ -431,19 +431,25 @@ export class CatanGameScene extends Phaser.Scene {
     const latestLine = snapshot.latestLog[0] ?? "";
     const newRoad = this.findNewRoad(previousSnapshot, snapshot);
     const nodeChange = this.findNodeChange(previousSnapshot, snapshot);
+    let primaryNotice: string | null = null;
+    const queueNotice = (text: string) => {
+      if (!primaryNotice) {
+        primaryNotice = text;
+      }
+    };
 
     if (snapshot.dice && snapshot.dice.total !== previousSnapshot.dice?.total) {
-      this.showNotice(`${snapshot.players[snapshot.activePlayerId].label} 的回合：掷出 ${snapshot.dice.total}`);
+      queueNotice(`${snapshot.players[snapshot.activePlayerId].label} 的回合：掷出 ${snapshot.dice.total}`);
     }
 
     if (newRoad) {
       this.pulseSingleRoad(newRoad.edgeId, newRoad.owner);
-      this.showNotice(`${snapshot.players[newRoad.owner].label} 修了一条路`);
+      queueNotice(`${snapshot.players[newRoad.owner].label} 修了一条路`);
     }
 
     if (nodeChange) {
       this.pulseSingleNode(nodeChange.nodeId, nodeChange.owner, nodeChange.level === "city");
-      this.showNotice(
+      queueNotice(
         nodeChange.level === "city"
           ? `${snapshot.players[nodeChange.owner].label} 升级了一座城市`
           : `${snapshot.players[nodeChange.owner].label} 落下了一个村庄`,
@@ -452,17 +458,17 @@ export class CatanGameScene extends Phaser.Scene {
 
     if (latestLine.includes("打出了骑士卡")) {
       this.pulseRobberMarker();
-      this.showNotice("骑士发动：选择一个地块放置强盗");
+      queueNotice("骑士发动：选择一个地块放置强盗");
     }
 
     if (latestLine.includes("打出了丰收卡")) {
       this.flashResourceNodes(0xffd67a);
-      this.showNotice(snapshot.latestLog[1] ?? "丰收发动");
+      queueNotice(snapshot.latestLog[1] ?? "丰收发动");
     }
 
     if (snapshot.freeRoadBuildsRemaining > previousSnapshot.freeRoadBuildsRemaining) {
       this.pulseRoadChoices(snapshot.availableRoadEdges);
-      this.showNotice("道路建设发动：可免费修路 2 次");
+      queueNotice("道路建设发动：可免费修路 2 次");
     }
 
     const longestRoadLine = snapshot.latestLog.find((line) => line.includes("道路王"));
@@ -474,14 +480,14 @@ export class CatanGameScene extends Phaser.Scene {
         this.pulseOwnerRoadNetwork(snapshot, ownerId);
       }
 
-      this.showNotice(longestRoadLine);
+      queueNotice(longestRoadLine);
     }
 
     const victoryPointLine = snapshot.latestLog.find((line) => line.includes("得分卡"));
 
     if (victoryPointLine) {
       this.flashResourceNodes(0x9fd8ff);
-      this.showNotice(victoryPointLine);
+      queueNotice(victoryPointLine);
     }
 
     if (
@@ -490,7 +496,11 @@ export class CatanGameScene extends Phaser.Scene {
       !latestLine.includes("打出了骑士卡")
     ) {
       this.pulseRobberMarker();
-      this.showNotice("强盗触发：选择一个新地块");
+      queueNotice("强盗触发：选择一个新地块");
+    }
+
+    if (primaryNotice) {
+      this.showNotice(primaryNotice);
     }
   }
 
