@@ -7,7 +7,7 @@ import {
   type CatanResource,
   type CatanResourceState,
 } from "./engineTypes";
-import { canAffordWithMomentumAssist } from "./catanEngine";
+import { canAffordWithAiPressureBuildAssist, canAffordWithMomentumAssist } from "./catanEngine";
 import {
   getAvailableCityNodes,
   getAvailableRoadEdges,
@@ -105,16 +105,16 @@ export function chooseBaselineAiIntent(
     return { type: "play-harvest", resources: harvestTarget };
   }
 
-  if (state.momentumPhase === "pressure" && roadEdgeId !== undefined && canAffordWithMomentumAssist(state, playerId, buildCosts["build-road"])) {
-    return { type: "build-road", edgeId: roadEdgeId };
-  }
-
-  if (cityNodeId !== undefined && canAffordWithMomentumAssist(state, playerId, buildCosts["upgrade-city"])) {
+  if (cityNodeId !== undefined && canAffordWithAiPressureBuildAssist(state, playerId, buildCosts["upgrade-city"])) {
     return { type: "upgrade-city", nodeId: cityNodeId };
   }
 
-  if (settlementNodeId !== undefined && canAffordWithMomentumAssist(state, playerId, buildCosts["build-settlement"])) {
+  if (settlementNodeId !== undefined && canAffordWithAiPressureBuildAssist(state, playerId, buildCosts["build-settlement"])) {
     return { type: "build-settlement", nodeId: settlementNodeId };
+  }
+
+  if (state.momentumPhase === "pressure" && roadEdgeId !== undefined && canAffordWithMomentumAssist(state, playerId, buildCosts["build-road"])) {
+    return { type: "build-road", edgeId: roadEdgeId };
   }
 
   if (roadEdgeId !== undefined && (state.freeRoadBuildsRemaining > 0 || canAffordWithMomentumAssist(state, playerId, buildCosts["build-road"]))) {

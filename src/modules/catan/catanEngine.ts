@@ -131,6 +131,12 @@ function getCostShortfall(resources: CatanResourceState, cost: Partial<CatanReso
   }, 0);
 }
 
+function getMissingResourceTypeCount(resources: CatanResourceState, cost: Partial<CatanResourceState>) {
+  return (Object.entries(cost) as Array<[CatanResource, number]>).reduce((total, [resource, count]) => {
+    return total + (Math.max((count ?? 0) - resources[resource], 0) > 0 ? 1 : 0);
+  }, 0);
+}
+
 function getMomentumAidBudget(
   state: CatanMatchState,
   playerId: CatanPlayerId,
@@ -173,6 +179,22 @@ export function canAffordWithMomentumAssist(
   return shortfall > 0 && shortfall <= getMomentumAidBudget(state, playerId, category);
 }
 
+export function canAffordWithAiPressureBuildAssist(
+  state: CatanMatchState,
+  playerId: CatanPlayerId,
+  cost: Partial<CatanResourceState>,
+) {
+  if (canAffordWithMomentumAssist(state, playerId, cost, "build")) {
+    return true;
+  }
+
+  if (playerId === "player" || state.momentumPhase !== "pressure") {
+    return false;
+  }
+
+  return getMissingResourceTypeCount(state.players[playerId].resources, cost) <= 2;
+}
+
 function payCostSoft(resources: CatanResourceState, cost: Partial<CatanResourceState>) {
   const nextResources = cloneResources(resources);
 
@@ -193,6 +215,36 @@ function maybeUseMomentumAssist(
   const shortfall = getCostShortfall(state.players[playerId].resources, cost);
   const budget = getMomentumAidBudget(state, playerId, category);
   const assisted = shortfall > 0 && shortfall <= budget;
+
+  return {
+    assisted,
+    state: assisted
+      ? {
+          ...state,
+          momentumAidUsed: {
+            ...state.momentumAidUsed,
+            [playerId]: true,
+          },
+        }
+      : state,
+  };
+}
+
+function maybeUseAiPressureBuildAssist(
+  state: CatanMatchState,
+  playerId: CatanPlayerId,
+  cost: Partial<CatanResourceState>,
+) {
+  const baselineAssist = maybeUseMomentumAssist(state, playerId, cost, "build");
+
+  if (baselineAssist.assisted) {
+    return baselineAssist;
+  }
+
+  const assisted =
+    playerId !== "player" &&
+    state.momentumPhase === "pressure" &&
+    getMissingResourceTypeCount(state.players[playerId].resources, cost) <= 2;
 
   return {
     assisted,
@@ -1322,11 +1374,11 @@ function buildSettlement(state: CatanMatchState, playerId: CatanPlayerId, nodeId
     return { state, applied: false, reason: "这个据点当前无法建造。" } satisfies CatanIntentResult;
   }
 
-  if (!canAffordWithMomentumAssist(state, playerId, buildCosts["build-settlement"])) {
+  if (!canAffordWithAiPressureBuildAssist(state, playerId, buildCosts["build-settlement"])) {
     return { state, applied: false, reason: "资源不足，无法落定居点。" } satisfies CatanIntentResult;
   }
 
-  const assistedCostState = maybeUseMomentumAssist(state, playerId, buildCosts["build-settlement"], "build");
+  const assistedCostState = maybeUseAiPressureBuildAssist(state, playerId, buildCosts["build-settlement"]);
   const occupiedNodes = {
     ...assistedCostState.state.occupiedNodes,
     [nodeId]: {
@@ -1373,11 +1425,11 @@ function upgradeCity(state: CatanMatchState, playerId: CatanPlayerId, nodeId: nu
     return { state, applied: false, reason: "这个位置当前不能升级为城市。" } satisfies CatanIntentResult;
   }
 
-  if (!canAffordWithMomentumAssist(state, playerId, buildCosts["upgrade-city"])) {
+  if (!canAffordWithAiPressureBuildAssist(state, playerId, buildCosts["upgrade-city"])) {
     return { state, applied: false, reason: "资源不足，无法升级城市。" } satisfies CatanIntentResult;
   }
 
-  const assistedCostState = maybeUseMomentumAssist(state, playerId, buildCosts["upgrade-city"], "build");
+  const assistedCostState = maybeUseAiPressureBuildAssist(state, playerId, buildCosts["upgrade-city"]);
   const occupiedNodes = {
     ...assistedCostState.state.occupiedNodes,
     [nodeId]: {
