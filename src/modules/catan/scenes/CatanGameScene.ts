@@ -525,12 +525,12 @@ export class CatanGameScene extends Phaser.Scene {
       road.setScale(1);
       this.tweens.add({
         targets: road,
-        scaleX: 1.14,
-        scaleY: 1.14,
-        alpha: 1,
-        duration: 180,
+        scaleX: 1.08,
+        scaleY: 1.08,
+        alpha: 0.84,
+        duration: 220,
         yoyo: true,
-        repeat: 1,
+        repeat: 0,
         ease: "Sine.easeInOut",
       });
     });
@@ -548,12 +548,12 @@ export class CatanGameScene extends Phaser.Scene {
     road.setScale(1);
     this.tweens.add({
       targets: road,
-      scaleX: 1.26,
-      scaleY: 1.26,
-      alpha: 1,
-      duration: 240,
+      scaleX: 1.12,
+      scaleY: 1.12,
+      alpha: 0.92,
+      duration: 220,
       yoyo: true,
-      repeat: 2,
+      repeat: 0,
       ease: "Sine.easeInOut",
     });
   }
@@ -568,12 +568,12 @@ export class CatanGameScene extends Phaser.Scene {
       road.setScale(1);
       this.tweens.add({
         targets: road,
-        scaleX: 1.18,
-        scaleY: 1.18,
-        alpha: 1,
-        duration: 180,
+        scaleX: 1.08,
+        scaleY: 1.08,
+        alpha: 0.9,
+        duration: 200,
         yoyo: true,
-        repeat: 2,
+        repeat: 0,
         ease: "Sine.easeInOut",
       });
     });
@@ -582,15 +582,16 @@ export class CatanGameScene extends Phaser.Scene {
   private flashResourceNodes(color: number) {
     this.nodeSlots.forEach((slot) => {
       this.tweens.killTweensOf(slot);
+      slot.setAlpha(Math.max(slot.alpha, 0.48));
       this.tweens.add({
         targets: slot,
-        alpha: 0.95,
-        duration: 150,
+        alpha: 0.68,
+        duration: 180,
         yoyo: true,
-        repeat: 1,
+        repeat: 0,
         ease: "Sine.easeInOut",
         onStart: () => {
-          slot.setStrokeStyle(2, color, 0.9);
+          slot.setStrokeStyle(2, color, 0.68);
         },
         onComplete: () => {
           slot.setStrokeStyle(1, 0xe9e2c8, 0.22);
@@ -609,13 +610,13 @@ export class CatanGameScene extends Phaser.Scene {
 
     this.tweens.killTweensOf(slot);
     this.tweens.killTweensOf(structure);
-    slot.setStrokeStyle(2, ownerColors[owner], 0.95);
+    slot.setStrokeStyle(2, ownerColors[owner], 0.7);
     this.tweens.add({
       targets: slot,
-      alpha: 0.96,
-      duration: 180,
+      alpha: 0.72,
+      duration: 200,
       yoyo: true,
-      repeat: 1,
+      repeat: 0,
       ease: "Sine.easeInOut",
       onComplete: () => {
         slot.setStrokeStyle(1, 0xe9e2c8, 0.22);
@@ -623,11 +624,11 @@ export class CatanGameScene extends Phaser.Scene {
     });
     this.tweens.add({
       targets: structure,
-      scaleX: isCity ? 1.2 : 1.16,
-      scaleY: isCity ? 1.2 : 1.16,
+      scaleX: isCity ? 1.12 : 1.08,
+      scaleY: isCity ? 1.12 : 1.08,
       duration: 220,
       yoyo: true,
-      repeat: 2,
+      repeat: 0,
       ease: "Sine.easeInOut",
       onStart: () => {
         structure.setAlpha(1);
@@ -645,7 +646,7 @@ export class CatanGameScene extends Phaser.Scene {
 
     this.tweens.killTweensOf(this.noticeText);
     this.noticeText.setText(text);
-    this.noticeText.setAlpha(0.96);
+    this.noticeText.setAlpha(0.82);
     this.tweens.add({
       targets: this.noticeText,
       alpha: 0,
